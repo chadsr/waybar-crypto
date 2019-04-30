@@ -58,7 +58,7 @@ icon = 
     - **change24h:** Displays the price change over the past 24 hours.
     - **change7d:** Displays the price change over the past week.
     - **volume24h:** Displays the volume in your chosen currency, over the past 24 hours.
-- **api_key:** CoinmarketCap API key obtained from their [new api](https://coinmarketcap.com/api/) (The public API is discontinuing :())
+- **api_key:** CoinmarketCap API key obtained from their [new api](https://coinmarketcap.com/api/) (The public API is discontinuing :'()
 
 #### Adding cryptocurrencies:
 For each cryptocurrency you wish to display, add a section as shown in the example above, where the section name is the **short** cryptocurrency name. 
