@@ -14,8 +14,6 @@ git clone https://github.com/Chadsr/waybar-crypto.git
 cd waybar-crypto
 
 cp -R crypto ~/.config/waybar/modules
-# OR symlink (so you can handle updating via this repo)
-cp -Rs crypto ~/.config/waybar/modules
 
 cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
 ```
