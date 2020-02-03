@@ -2,6 +2,8 @@
 
 ## A [waybar](https://github.com/Alexays/Waybar) plugin for displaying cryptocurrency market information.
 
+![Example Setup](https://raw.githubusercontent.com/Chadsr/waybar-crypto/master/images/waybar_crypto.png)
+
 ### Requirements
 - https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf (For icons)
 - python3.6 or above
