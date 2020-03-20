@@ -1,0 +1,39 @@
+language: python
+jobs:
+  include:
+  - stage: lint
+    python:
+    - '3.6'
+    install:
+    - pip install flake8
+    script:
+    - flake8 --version
+    - flake8 --ignore E501 ./crypto.py
+  - stage: security
+    python:
+    - '3.6'
+    - '3.7'
+    - '3.8'
+    - nightly
+    install:
+    - pip install bandit
+    script:
+    - bandit --version
+    - bandit -r ./crypto.py
+  - stage: testing
+    python:
+    - '3.6'
+    - '3.7'
+    - '3.8'
+    - nightly
+    install:
+    - pip install -r ./requirements.txt
+    script:
+    - python ./crypto.py
+stages:
+- lint
+- security
+- testing
+env:
+  global:
+    secure: Qc+08jOYcdi9+87d9tMNAWzcKjd4SRaKLEQ7XrmdFUa45/L1TrjY3MARL7AOdfavOpFdQHIshIK9uZ1iX3SzuBBajLusIh2lwfScoLwwAMWNHT2rw6PAYKkUVJXRHF8T3N/r8ubnrm+gLMb+wcbyUMPUhnnEuISgwL93xwVOaL1ptjn4/og3/eFK6ec4OdksaQw4QvYs8tlXZ/zq6ZahxinCe6xCB43k+W0wIF1emsjRMIkHj7MmtsolRRLQ08ozjLVlrdyHcBSCYDHeFcC8njK2TOTqaAhj4jSPPJAapiGCQsO3sx5AvwQvNMC8BCHGKcf3GLzGMOLrtLA57a2VBqy+PwcRry5qASZj1Czb3WKrAVb13JmDIJ996v2iPf0pj0XUQGu76I+YxoGWRi3qblKUPnBaAvzDlS6k5ogKccaUQzFs1gRUID92SV3025nzY88rm+aTHiX1eEZEdmAD4d6vYSHAMRK0R3+Qx2fXyerB50sdb6hBfipBZ9GM1cYjLtjJFLosaf0eyhvdqeB/OlYOJpn0c74cN+/aYkuC/Heqmmczopw+bsYA70UXq7hTU6yL1Ea8cyyUxzqtYxVzpdhSSqKza1qrH6RUms1Acm0HnlQW+M990sC6/5fFlZBnnDwRtl8os6v9x1LGqaOJaqtTHpLfIVZGq3mzDUQfJz0=

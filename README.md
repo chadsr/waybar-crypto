@@ -1,23 +1,24 @@
 # waybar-crypto
 
+[![Build Status](https://travis-ci.org/Chadsr/waybar-crypto.svg?branch=master)](https://travis-ci.org/Chadsr/waybar-crypto)
+
 ## A [waybar](https://github.com/Alexays/Waybar) plugin for displaying cryptocurrency market information.
 
 ![Example Setup](https://raw.githubusercontent.com/Chadsr/waybar-crypto/master/images/waybar_crypto.png)
 
 ### Requirements
-- https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf (For icons)
-- python3.6 or above
+- Python 3.6 or greater
 - python-requests
 
 ### Installation
-1. Clone this repo and copy the contents of the crypto folder
+1. Clone this repo into the waybar modules directory
 ```
-git clone https://github.com/Chadsr/waybar-crypto.git
-cd waybar-crypto
-
-cp -R crypto ~/.config/waybar/modules
-
+curl -O https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf
 cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
+
+cd ~/.config/waybar/modules
+git clone https://github.com/Chadsr/waybar-crypto.git crypto
+pip install --user -r requirements.txt
 ```
 
 2. Then in your waybar config (e.g. `~/.config/waybar/config`)
@@ -26,7 +27,7 @@ cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
     "format": "{}",
     "interval": 600,
     "return-type": "json",
-    "exec": "~/.config/waybar/modules/crypto.py",
+    "exec": "~/.config/waybar/modules/crypto/crypto.py",
     "exec-if": "ping pro-api.coinmarketcap.com -c1"
 }
 ```
