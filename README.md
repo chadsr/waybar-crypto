@@ -13,9 +13,6 @@
 ### Installation
 1. Clone this repo into the waybar modules directory
 ```
-curl -O https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf
-cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
-
 cd ~/.config/waybar/modules
 git clone https://github.com/Chadsr/waybar-crypto.git crypto
 pip install --user -r requirements.txt
@@ -30,6 +27,12 @@ pip install --user -r requirements.txt
     "exec": "~/.config/waybar/modules/crypto/crypto.py",
     "exec-if": "ping pro-api.coinmarketcap.com -c1"
 }
+```
+
+3. Install the needed fonts
+```
+curl -O https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf
+cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
 ```
 
 ### Configuration
