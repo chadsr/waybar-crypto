@@ -38,6 +38,7 @@ pip install --user -r requirements.txt
 ```
 curl -O https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf
 cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
+sudo fc-cache -f -v # Rebuild font cache
 ```
 
 ### Configuration
