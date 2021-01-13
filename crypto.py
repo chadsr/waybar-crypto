@@ -11,6 +11,8 @@ API_URL = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
 CONFIG_FILE = 'crypto.ini'
 API_KEY_ENV = 'COINMARKETCAP_API_KEY'
 
+MIN_PRECISION = 0
+
 
 class WaybarCrypto(object):
     """
@@ -45,6 +47,7 @@ class WaybarCrypto(object):
             "coins": [
                 "eth": {
                     "icon": "",
+                    "precision" 2
                 },
                 ...
             ],
@@ -89,7 +92,58 @@ class WaybarCrypto(object):
             # Construct the coins dict
             coins = {}
             for coin_name in coin_names:
-                coins[coin_name] = {'icon': config[coin_name]['icon']}
+                price_precision = int(config[coin_name]['price_precision'])
+                change_precision = int(config[coin_name]['change_precision'])
+                volume_precision = int(config[coin_name]['volume_precision'])
+
+                if type(price_precision) != int:
+                    print(
+                        f'Value price_precision must be an integer value for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                if type(change_precision) != int:
+                    print(
+                        f'Value change_precision must be an integer value for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                if type(volume_precision) != int:
+                    print(
+                        f'Value volume_precision must be an integer value for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                if price_precision < MIN_PRECISION:
+                    print(
+                        f'Value price_precision must be greater than {MIN_PRECISION} for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                if change_precision < MIN_PRECISION:
+                    print(
+                        f'Value change_precision must be greater than {MIN_PRECISION} for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                if volume_precision < MIN_PRECISION:
+                    print(
+                        f'Value volume_precision must be greater than {MIN_PRECISION} for {coin_name}',
+                        file=sys.stderr)
+
+                    return None
+
+                coins[coin_name] = {
+                    'icon': config[coin_name]['icon'],
+                    'price_precision': price_precision,
+                    'change_precision': change_precision,
+                    'volume_precision': volume_precision
+                }
 
             # The fiat currency used in the trading pair
             currency = config['general']['currency'].upper()
@@ -181,6 +235,9 @@ class WaybarCrypto(object):
         # with a string according to the display_options
         for coin_name, coin_obj in self.config['coins'].items():
             icon = coin_obj['icon']
+            price_precision = coin_obj['price_precision']
+            volume_precision = coin_obj['volume_precision']
+            change_precision = coin_obj['change_precision']
 
             # Extract the object relevant to our coin/currency pair
             pair_info = api_json['data'][coin_name.upper()]['quote'][currency]
@@ -189,26 +246,28 @@ class WaybarCrypto(object):
 
             # Shows price by default
             if 'price' in display_options or not display_options:
-                current_price = round(Decimal(pair_info['price']), 2)
+                current_price = round(Decimal(pair_info['price']),
+                                      price_precision)
                 output += f'{currency_symbol}{current_price} '
 
             if 'volume24h' in display_options:
-                percentage_change = round(Decimal(pair_info['volume_24h']), 2)
+                percentage_change = round(Decimal(pair_info['volume_24h']),
+                                          volume_precision)
                 output += f'24hV:{currency_symbol}{percentage_change:+} '
 
             if 'change1h' in display_options:
                 percentage_change = round(
-                    Decimal(pair_info['percent_change_1h']), 2)
+                    Decimal(pair_info['percent_change_1h']), change_precision)
                 output += f'1h:{percentage_change:+}% '
 
             if 'change24h' in display_options:
                 percentage_change = round(
-                    Decimal(pair_info['percent_change_24h']), 2)
+                    Decimal(pair_info['percent_change_24h']), change_precision)
                 output += f'24h:{percentage_change:+}% '
 
             if 'change7d' in display_options:
                 percentage_change = round(
-                    Decimal(pair_info['percent_change_7d']), 2)
+                    Decimal(pair_info['percent_change_7d']), change_precision)
                 output += f'7d:{percentage_change:+}% '
 
             output_obj['text'] += output
