@@ -55,9 +55,15 @@ api_key = some_coinmarketcap_key
 
 [btc]
 icon = 
+price_precision = 2
+change_precision = 2
+volume_precision = 2
 
 [eth]
 icon = 
+price_precision = 2
+change_precision = 2
+volume_precision = 2
 ```
 
 - **currency:** Any valid currency code should be accepted
@@ -80,3 +86,6 @@ For each cryptocurrency you wish to display, add a section as shown in the examp
 Valid options:
 
 - **icon:** A character symbol to display next to this cryptocurrency's metrics.
+- **price_precision** The decimal precision at which to display the price value of the coin.
+- **change_precision** The decimal precision at which to display the change value(s) of the coin.
+- **volume_precision** The decimal precision at which to display the volume value of the coin.
