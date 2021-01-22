@@ -18,6 +18,8 @@
 ```
 cd ~/.config/waybar/modules
 git clone https://github.com/Chadsr/waybar-crypto.git crypto
+
+# If you don't want to install python-requests via your system package manager
 pip install --user -r requirements.txt
 ```
 
