@@ -44,9 +44,10 @@ sudo fc-cache -f -v # Rebuild font cache
 ```
 
 ### Configuration
+Copy the example configuration file `config.ini.example` to `config.ini`.
 
-The information displayed can be customised by editing the crypto.ini configuration file.
-(e.g. `~/.config/waybar/modules/crypto/crypto.ini` if you followed the instructions above)
+The information displayed can then be customised by editing the `config.ini` configuration file.
+(e.g. `~/.config/waybar/modules/crypto/config.ini` if you followed the instructions above)
 
 ```
 [general]
@@ -79,7 +80,7 @@ volume_precision = 2
   - **volume24h:** Displays the volume in your chosen currency, over the past 24 hours.
 - **api_key:** CoinmarketCap API key obtained from their [new api](https://coinmarketcap.com/api/) (The public API is discontinuing :'()
 
-_Alternatively, the CoinMarketCap API key can be set through the environment variable `COINMARKETCAP_API_KEY`, if you do not wish to save it to the crypto.ini file._
+_Alternatively, the CoinMarketCap API key can be set through the environment variable `COINMARKETCAP_API_KEY`, if you do not wish to save it to the `config.ini` configuration file._
 
 #### Adding cryptocurrencies:
 
@@ -88,6 +89,6 @@ For each cryptocurrency you wish to display, add a section as shown in the examp
 Valid options:
 
 - **icon:** A character symbol to display next to this cryptocurrency's metrics.
-- **price_precision** The decimal precision at which to display the price value of the coin.
-- **change_precision** The decimal precision at which to display the change value(s) of the coin.
-- **volume_precision** The decimal precision at which to display the volume value of the coin.
+- **price_precision** The decimal precision at which to display the price value of the cryptocurrency.
+- **change_precision** The decimal precision at which to display the change value(s) of the cryptocurrency.
+- **volume_precision** The decimal precision at which to display the volume value of the cryptocurrency.
