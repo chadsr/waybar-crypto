@@ -8,12 +8,12 @@
 
 ### Requirements
 
-- Python 3.6 or greater
+- Python >=3.7
 - python-requests
 
 ### Installation
 
-1. Clone this repo into the waybar modules directory
+1. Clone this repo into the Waybar modules directory
 
 ```
 cd ~/.config/waybar/modules
@@ -23,7 +23,7 @@ git clone https://github.com/Chadsr/waybar-crypto.git crypto
 pip install --user -r requirements.txt
 ```
 
-2. Then in your waybar config (e.g. `~/.config/waybar/config`)
+2. Then in your Waybar config (e.g. `~/.config/waybar/config`)
 
 ```
 "custom/crypto": {
