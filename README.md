@@ -1,6 +1,6 @@
 # waybar-crypto
 
-[![Build Status](https://travis-ci.org/Chadsr/waybar-crypto.svg?branch=master)](https://travis-ci.org/Chadsr/waybar-crypto)
+[![Tests](https://github.com/Chadsr/waybar-crypto/actions/workflows/test.yml/badge.svg)](https://github.com/Chadsr/waybar-crypto/actions/workflows/test.yml)
 
 ## A [waybar](https://github.com/Alexays/Waybar) plugin for displaying cryptocurrency market information.
 
