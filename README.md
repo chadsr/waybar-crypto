@@ -8,8 +8,8 @@
 
 ### Requirements
 
-- Python >=3.7
-- python-requests
+- `python` >=3.7
+- `python-requests` (system package) *or* `poetry` (for venv)
 
 ### Installation
 
