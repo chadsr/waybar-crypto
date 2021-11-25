@@ -9,7 +9,7 @@
 ### Requirements
 
 - `python` >=3.7
-- `python-requests` (system package) *or* `poetry` (for venv)
+- `python-requests` (global) or `poetry` (to install dependencies locally)
 
 ### Installation
 
@@ -20,7 +20,7 @@ cd ~/.config/waybar/modules
 git clone https://github.com/Chadsr/waybar-crypto.git crypto
 
 # If you don't want to install python-requests via your system package manager
-pip install --user -r requirements.txt
+pip install --user --requirement <(poetry export --format requirements.txt)
 ```
 
 2. Then in your Waybar config (e.g. `~/.config/waybar/config`)
@@ -30,7 +30,7 @@ pip install --user -r requirements.txt
     "format": "{}",
     "interval": 600,
     "return-type": "json",
-    "exec": "~/.config/waybar/modules/crypto/crypto.py",
+    "exec": "~/.config/waybar/modules/crypto/waybar_crypto.py",
     "exec-if": "ping pro-api.coinmarketcap.com -c1"
 }
 ```
