@@ -276,7 +276,7 @@ class WaybarCrypto(object):
         return json.dumps((output_obj))
 
 
-def __main__():
+def main():
     # Get the absolute path of this script
     abs_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = f"{abs_dir}/{CONFIG_FILE}"
@@ -286,3 +286,7 @@ def __main__():
 
     # Write the output_obj dict as a json string to stdout
     sys.stdout.write(waybar_json)
+
+
+if __name__ == "__main__":
+    main()
