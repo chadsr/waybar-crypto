@@ -60,4 +60,4 @@ jobs:
       - name: Run Bandit
         run: |
           source .venv/bin/activate
-          bandit -r ./
+          bandit ./waybar_crypto.py
