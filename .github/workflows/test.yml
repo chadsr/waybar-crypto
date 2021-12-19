@@ -60,4 +60,4 @@ jobs:
       - name: Run Bandit
         run: |
           source .venv/bin/activate
-          bandit ./waybay_crypto
+          bandit -r ./
