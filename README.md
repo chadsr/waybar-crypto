@@ -8,7 +8,7 @@
 
 ### Requirements
 
-- `python` >=3.7
+- `python` >=3.8
 - `python-requests` (global) or `poetry` (to install dependencies locally)
 
 ### Installation
