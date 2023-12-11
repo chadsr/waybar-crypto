@@ -13,7 +13,7 @@ requests = "^2.27.1"
 black = "^23.10"
 pytest = "^7.1.2"
 pytest-cov = "^4.1.0"
-bandit = "^1.7.4"
+bandit = "^1.7.6"
 
 [tool.black]
 # Use the more relaxed max line length permitted in PEP8.
