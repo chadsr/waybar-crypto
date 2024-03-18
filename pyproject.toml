@@ -10,7 +10,7 @@ python = "^3.8"
 requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
-black = "^23.10"
+black = "^24.3"
 pytest = "^7.1.2"
 pytest-cov = "^4.1.0"
 bandit = "^1.7.4"
