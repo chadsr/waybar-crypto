@@ -29,7 +29,7 @@ class WaybarCrypto(object):
 
     def __init__(self, config_path: str):
         """
-        Take config_path pointting to crypto.ini.
+        Take config_path pointing to crypto.ini.
 
         Parses crypto.ini to self.config
         """
