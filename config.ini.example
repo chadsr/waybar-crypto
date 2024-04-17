@@ -3,16 +3,18 @@ currency = eur
 currency_symbol = €
 # options are {price,change1h,change24h,change7d,change30d,volume24h}
 display = price,change24h
-api_key = some_coinmarketcap_key
+
+# set the key here, or with env COINMARKETCAP_API_KEY
+api_key = your_coinmarketcap_api_key
 
 [btc]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2
 
 [eth]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2

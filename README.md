@@ -1,31 +1,45 @@
 # waybar-crypto
 
-[![Tests](https://github.com/Chadsr/waybar-crypto/actions/workflows/test.yml/badge.svg)](https://github.com/Chadsr/waybar-crypto/actions/workflows/test.yml)
+[![Tests](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml/badge.svg)](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml)
 
-## A [waybar](https://github.com/Alexays/Waybar) plugin for displaying cryptocurrency market information.
+A [Waybar](https://github.com/Alexays/Waybar) module for displaying cryptocurrency market information, utilising the [CoinMarketCap API](https://coinmarketcap.com/api/documentation/v1/).
 
-![Example Setup](https://raw.githubusercontent.com/Chadsr/waybar-crypto/master/images/waybar_crypto.png)
+![Example Setup](https://raw.githubusercontent.com/chadsr/waybar-crypto/master/images/waybar_crypto.png)
 
-### Requirements
+## Requirements
 
 - `python` >=3.8
-- `python-requests` (global) or `poetry` (to install dependencies locally)
+- `python-requests`
 
-### Installation
+## Installation
 
-1. Clone this repo into the Waybar modules directory
+### Clone to the Waybar modules directory
 
-```
+```shell
 cd ~/.config/waybar/modules
-git clone https://github.com/Chadsr/waybar-crypto.git crypto
+git clone https://github.com/chadsr/waybar-crypto.git crypto && cd crypto/
+git submodule update --init --recursive --remote --progress
 
-# If you don't want to install python-requests via your system package manager
-pip install --user --requirement <(poetry export --format requirements.txt)
+# **only** If you for some reason don't want to install python-requests with a package manager, or setup a venv
+pip install --user --requirement <(poetry export --without=dev --format requirements.txt)
 ```
 
-2. Then in your Waybar config (e.g. `~/.config/waybar/config`)
+### Install the needed fonts
 
+```shell
+ # Use ~/.local/share/fonts/TTF (user scope, recommended) or /usr/share/fonts/TTF (system scope)
+mkdir -p ~/.local/share/fonts/TTF
+ln -s ./.submodules/cryptocoins/webfont/cryptocoins.ttf ~/.local/share/fonts/TTF
+
+# Rebuild font cache
+fc-cache -f
 ```
+
+### Update Waybar configuration
+
+*Found at `~/.config/waybar/config` by default*
+
+```json
 "custom/crypto": {
     "format": "{}",
     "interval": 600,
@@ -35,35 +49,38 @@ pip install --user --requirement <(poetry export --format requirements.txt)
 }
 ```
 
-3. Install the needed fonts
+### Style the module
 
-```
-curl -O https://github.com/AllienWorks/cryptocoins/blob/master/webfont/cryptocoins.ttf
-cp cryptocoins.ttf /usr/share/fonts/TTF # Or some font path of your choice
-sudo fc-cache -f -v # Rebuild font cache
+*Found at `~/.config/waybar/style.css` by default*
+
+```css
+#custom-crypto {
+    font-family: cryptocoins, monospace;
+}
 ```
 
-### Configuration
+## Configuration
+
 Copy the example configuration file `config.ini.example` to `config.ini`.
 
 The information displayed can then be customised by editing the `config.ini` configuration file.
 (e.g. `~/.config/waybar/modules/crypto/config.ini` if you followed the instructions above)
 
-```
+```ini
 [general]
 currency = eur
 currency_symbol = €
 display = price,change24h,change7d
-api_key = some_coinmarketcap_key
+api_key = your_coinmarketcap_api_key
 
 [btc]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2
 
 [eth]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2
@@ -79,13 +96,13 @@ volume_precision = 2
   - **change7d:** Displays the price change over the past week.
   - **change30d:** Displays the price change over the past month.
   - **volume24h:** Displays the volume in your chosen currency, over the past 24 hours.
-- **api_key:** CoinmarketCap API key obtained from their [new api](https://coinmarketcap.com/api/) (The public API is discontinuing :'()
+- **api_key:** CoinmarketCap API key obtained from their [API Dashboard](https://coinmarketcap.com/api).
 
-_Alternatively, the CoinMarketCap API key can be set through the environment variable `COINMARKETCAP_API_KEY`, if you do not wish to save it to the `config.ini` configuration file._
+*Alternatively, the CoinMarketCap API key can be set through the environment variable `COINMARKETCAP_API_KEY`, if you do not wish to save it to the `config.ini` configuration file.*
 
-#### Adding cryptocurrencies:
+### Adding Cryptocurrencies
 
-For each cryptocurrency you wish to display, add a section as shown in the example above, where the section name is the **short** cryptocurrency name.
+For each cryptocurrency you wish to display, add a section as shown in the example above, where the section name is the **short** cryptocurrency name as found on [CoinMarketCap](https://coinmarketcap.com/).
 
 Valid options:
 
