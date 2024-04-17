@@ -29,7 +29,7 @@ class WaybarCrypto(object):
 
     def __init__(self, config_path: str):
         """
-        Take config_path pointting to crypto.ini.
+        Take config_path pointing to crypto.ini.
 
         Parses crypto.ini to self.config
         """
@@ -269,6 +269,12 @@ class WaybarCrypto(object):
                     Decimal(pair_info["percent_change_7d"]), change_precision
                 )
                 output += f"7d:{percentage_change:+}% "
+
+            if "change30d" in display_options:
+                percentage_change = round(
+                    Decimal(pair_info["percent_change_30d"]), change_precision
+                )
+                output += f"30d:{percentage_change:+}% "
 
             output_obj["text"] += output
             output_obj["tooltip"] += output
