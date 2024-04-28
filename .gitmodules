@@ -1,4 +1,4 @@
-[submodule ".submodules/cryptocoins"]
-	path = .submodules/cryptocoins
-	url = https://github.com/chadsr/cryptocoins.git
+[submodule ".submodules/cryptofont"]
+	path = .submodules/cryptofont
+	url = https://github.com/Cryptofonts/cryptofont.git
 	branch = master

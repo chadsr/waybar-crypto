@@ -29,7 +29,7 @@ pip install --user --requirement <(poetry export --without=dev --format requirem
 ```shell
  # Use ~/.local/share/fonts/TTF (user scope, recommended) or /usr/share/fonts/TTF (system scope)
 mkdir -p ~/.local/share/fonts/TTF
-ln -s ./.submodules/cryptocoins/webfont/cryptocoins.ttf ~/.local/share/fonts/TTF
+ln -s ./.submodules/cryptofont/fonts/cryptofont.ttf ~/.local/share/fonts/TTF
 
 # Rebuild font cache
 fc-cache -f
@@ -55,7 +55,7 @@ fc-cache -f
 
 ```css
 #custom-crypto {
-    font-family: cryptocoins, monospace;
+    font-family: cryptofont, monospace;
 }
 ```
 

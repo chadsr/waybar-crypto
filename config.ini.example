@@ -8,13 +8,13 @@ display = price,change24h
 api_key = your_coinmarketcap_api_key
 
 [btc]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2
 
 [eth]
-icon = 
+icon = 
 price_precision = 2
 change_precision = 2
 volume_precision = 2
