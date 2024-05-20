@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-requests = "^2.27.1"
+requests = "^2.32.0"
 
 [tool.poetry.dev-dependencies]
 black = "^24.4"
