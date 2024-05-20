@@ -25,7 +25,7 @@ COIN_PRECISION_OPTIONS: set[str] = set(
 )
 
 FLOAT_FORMATTER = "{val:.{dp}f}"
-DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
+DEFAULT_DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
     "price": f"{FLOAT_FORMATTER}",
     "percent_change_1h": f"1h:{FLOAT_FORMATTER}%",
     "percent_change_24h": f"24h:{FLOAT_FORMATTER}%",
@@ -183,13 +183,12 @@ class WaybarCrypto(object):
             display_options = DEFAULT_DISPLAY_OPTIONS
 
         for display_option in display_options:
-            if display_option not in DISPLAY_OPTIONS_FORMAT:
+            if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
                 raise WaybarCryptoException(f"invalid display option '{display_option}")
 
-        display_options_format = DISPLAY_OPTIONS_FORMAT
-        display_options_format["price"] = (
-            f"{currency_symbol}{display_options_format["price"]}"
-        )
+        display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
+        display_format_price = display_options_format["price"]
+        display_options_format["price"] = f"{currency_symbol}{display_format_price}"
 
         api_key: str | None = None
         if "api_key" in cfp["general"]:
