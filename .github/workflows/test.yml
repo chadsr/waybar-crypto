@@ -12,6 +12,7 @@ on:
 
     pull_request_target:
         paths:
+            - ".github/workflows/test.yml"
             - "**/*.py"
             - "poetry.lock"
             - "pyproject.toml"
