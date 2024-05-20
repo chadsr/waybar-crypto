@@ -12,6 +12,7 @@ on:
 
     pull_request_target:
         paths:
+            - ".github/workflows/test.yml"
             - "**/*.py"
             - "poetry.lock"
             - "pyproject.toml"
@@ -25,7 +26,7 @@ jobs:
             - name: Install Python 3
               uses: actions/setup-python@v5
               with:
-                  python-version: "3.11"
+                  python-version: "3.12"
             - name: Lint
               uses: psf/black@stable
 
@@ -34,7 +35,7 @@ jobs:
         strategy:
             fail-fast: true
             matrix:
-                python-version: ["3.8", "3.9", "3.10", "3.11"]
+                python-version: ["3.9", "3.10", "3.11", "3.12"]
         runs-on: "ubuntu-latest"
         steps:
             - uses: actions/checkout@v4
