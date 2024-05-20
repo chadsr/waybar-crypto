@@ -110,6 +110,7 @@ For each cryptocurrency you wish to display, add a section as shown in the examp
 Valid options:
 
 - **icon:** A character symbol to display next to this cryptocurrency's metrics.
+- **in_tooltip:** Whether to display the data in the tooltip instead of the bar (defaults to false).
 - **price_precision** The decimal precision at which to display the price value of the cryptocurrency.
 - **change_precision** The decimal precision at which to display the change value(s) of the cryptocurrency.
 - **volume_precision** The decimal precision at which to display the volume value of the cryptocurrency.
