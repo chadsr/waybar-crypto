@@ -88,9 +88,7 @@ class TestWaybarCrypto:
                 assert field in quote_values
                 assert isinstance(quote_values[field], field_type)
 
-    def test_waybar_output(
-        self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest
-    ):
+    def test_waybar_output(self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest):
         output = waybar_crypto.waybar_output(quotes_latest)
         assert isinstance(output, dict)
         fields = ["text", "tooltip", "class"]
