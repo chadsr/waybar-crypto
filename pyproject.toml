@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "waybar-crypto"
-version = "v1.2.1"
+version = "v1.3.0"
 description = "A Waybar module for displaying cryptocurrency market information from CoinMarketCap."
 authors = ["Ross <git@ross.ch>"]
 license = "MIT"
