@@ -38,7 +38,7 @@ DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
 }
 DEFAULT_DISPLAY_OPTIONS: list[str] = ["price"]
 
-TIMEOUT_SECONDS = 3
+TIMEOUT_SECONDS = 10
 
 
 class ConfigGeneral(TypedDict):
