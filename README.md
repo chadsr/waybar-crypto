@@ -70,7 +70,7 @@ The information displayed can then be customised by editing the `config.ini` con
 [general]
 currency = eur
 currency_symbol = €
-display = price,change24h,change7d
+display = price,percent_change_24h,percent_change_7d
 api_key = your_coinmarketcap_api_key
 
 [btc]
@@ -88,15 +88,18 @@ volume_precision = 2
 
 - **currency:** Any valid currency code should be accepted
 - **currency_symbol:** A corresponding symbol of the currency you wish to display
+- **api_key:** CoinmarketCap API key obtained from their [API Dashboard](https://coinmarketcap.com/api).
 - **display:** A list of metrics you wish to display for each crypto currency. No spaces.
   Valid options are:
   - **price:** Displays the current price.
-  - **change1h:** Displays the price change over the past hour.
-  - **change24h:** Displays the price change over the past 24 hours.
-  - **change7d:** Displays the price change over the past week.
-  - **change30d:** Displays the price change over the past month.
-  - **volume24h:** Displays the volume in your chosen currency, over the past 24 hours.
-- **api_key:** CoinmarketCap API key obtained from their [API Dashboard](https://coinmarketcap.com/api).
+  - **percent_change_1h:** Price change over the past hour.
+  - **percent_change_24h:** Price change over the past 24 hours.
+  - **percent_change_7d:** Price change over the past week.
+  - **percent_change_30d:** Price change over the past thirty days.
+  - **percent_change_60d:** Price change over the past sixty days.
+  - **percent_change_90d:** Price change over the past ninety days.
+  - **volume_24h:** Market volume in your chosen currency, over the past 24 hours.
+  - **volume_change_24h:** Market volume change in your chosen currency, over the past 24 hours.
 
 *Alternatively, the CoinMarketCap API key can be set through the environment variable `COINMARKETCAP_API_KEY`, if you do not wish to save it to the `config.ini` configuration file.*
 
