@@ -60,6 +60,10 @@ jobs:
               run: |
                   source .venv/bin/activate
                   pytest --cov=./ --cov-report=xml tests/
+            - name: Upload Coverage to Codecov
+              uses: codecov/codecov-action@v4
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
             - name: Run Bandit
               run: |
                   source .venv/bin/activate
