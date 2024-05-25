@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Lint
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose"
-          use_pyproject: true
+      - uses: pre-commit/action@v3.0.1
+        env:
+          RUFF_OUTPUT_FORMAT: github
   test:
     needs: lint
     strategy:
