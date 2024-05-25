@@ -69,26 +69,27 @@ class TestWaybarCrypto:
             assert field in resp_quotes_latest
             assert isinstance(resp_quotes_latest[field], dict)
 
-        assert "quote" in resp_quotes_latest["data"]
-        quote = resp_quotes_latest["data"]["quote"]
-        assert isinstance(quote, dict)
+        for coin_data in resp_quotes_latest["data"].values():
+            assert "quote" in coin_data
+            quote = coin_data["quote"]
+            assert isinstance(quote, dict)
 
-        quote_fields_types = {
-            "price": float,
-            "volume_24h": float,
-            "volume_change_24h": float,
-            "percent_change_1h": float,
-            "percent_change_24h": float,
-            "percent_change_7d": float,
-            "percent_change_30d": float,
-            "percent_change_60d": float,
-            "percent_change_90d": float,
-        }
+            quote_fields_types = {
+                "price": float,
+                "volume_24h": float,
+                "volume_change_24h": float,
+                "percent_change_1h": float,
+                "percent_change_24h": float,
+                "percent_change_7d": float,
+                "percent_change_30d": float,
+                "percent_change_60d": float,
+                "percent_change_90d": float,
+            }
 
-        for quote_values in quote.values():
-            for field, field_type in quote_fields_types.items():
-                assert field in quote_values
-                assert isinstance(quote_values[field], field_type)
+            for quote_values in quote.values():
+                for field, field_type in quote_fields_types.items():
+                    assert field in quote_values
+                    assert isinstance(quote_values[field], field_type)
 
     def test_waybar_output(self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest):
         output = waybar_crypto.waybar_output(quotes_latest)

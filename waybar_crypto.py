@@ -103,7 +103,7 @@ class ResponseQuotesLatest(TypedDict):
     """Latest quotes response returns by the Coinmarketcap API"""
 
     status: ResponseStatus
-    data: QuoteData
+    data: dict[str, QuoteData]
 
 
 class WaybarCryptoException(Exception):
