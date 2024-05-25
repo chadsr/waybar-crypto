@@ -10,7 +10,7 @@ on:
             - "pyproject.toml"
             - "config.ini.example"
 
-    pull_request_target:
+    pull_request:
         paths:
             - ".github/workflows/test.yml"
             - "**/*.py"
@@ -24,50 +24,53 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Install Python 3
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.12"
+                uses: actions/setup-python@v5
+                with:
+                    python-version: "3.12"
             - name: Lint
-              uses: psf/black@stable
+                uses: psf/black@stable
+                with:
+                    use_pyproject: true
+
 
     test:
         needs: lint
         strategy:
             fail-fast: true
             matrix:
-                python-version: ["3.9", "3.10", "3.11", "3.12"]
+                python-version: ["3.10", "3.11", "3.12"]
         runs-on: "ubuntu-latest"
         steps:
-            - uses: actions/checkout@v4
             - name: Install Python 3
-              uses: actions/setup-python@v5
-              with:
-                  python-version: ${{ matrix.python-version }}
+            - uses: actions/checkout@v4
+                uses: actions/setup-python@v5
+                with:
+                    python-version: ${{ matrix.python-version }}
             - name: Install Poetry
-              uses: snok/install-poetry@v1
-              with:
-                  virtualenvs-create: true
-                  virtualenvs-in-project: true
+                uses: snok/install-poetry@v1
+                with:
+                    virtualenvs-create: true
+                    virtualenvs-in-project: true
             - name: Load cached venv
-              id: cached-poetry-dependencies
-              uses: actions/cache@v4
-              with:
-                  path: .venv
-                  key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+            id: cached-poetry-dependencies
+            uses: actions/cache@v4
+            with:
+                path: .venv
+                key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
             - name: Install dependencies
-              if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-              run: poetry install --no-interaction --no-root
+                if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+                run: poetry install --no-interaction --no-root
             - name: Run Pytest
-              env:
-                  COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
-              run: |
-                  source .venv/bin/activate
-                  pytest -vv --cov=./ --cov-report=xml tests/
+                env:
+                    COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
+                run: |
+                    source .venv/bin/activate
+                    pytest -vv --cov=./ --cov-report=xml tests/
             - name: Upload Coverage to Codecov
-              uses: codecov/codecov-action@v4
-              with:
-                token: ${{ secrets.CODECOV_TOKEN }}
+                uses: codecov/codecov-action@v4
+                with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
             - name: Run Bandit
-              run: |
-                  source .venv/bin/activate
-                  bandit ./waybar_crypto.py
+                run: |
+                    source .venv/bin/activate
+                    bandit ./waybar_crypto.py

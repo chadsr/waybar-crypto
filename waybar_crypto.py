@@ -25,7 +25,7 @@ COIN_PRECISION_OPTIONS: set[str] = set(
 )
 
 FLOAT_FORMATTER = "{val:.{dp}f}"
-DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
+DEFAULT_DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
     "price": f"{FLOAT_FORMATTER}",
     "percent_change_1h": f"1h:{FLOAT_FORMATTER}%",
     "percent_change_24h": f"24h:{FLOAT_FORMATTER}%",
@@ -37,6 +37,8 @@ DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
     "volume_change_24h": f"24hVol:{FLOAT_FORMATTER}%",
 }
 DEFAULT_DISPLAY_OPTIONS: list[str] = ["price"]
+
+DEFAULT_COIN_CONFIG_TOOLTIP = False
 
 TIMEOUT_SECONDS = 10
 
@@ -51,6 +53,7 @@ class ConfigGeneral(TypedDict):
 
 class ConfigCoin(TypedDict):
     icon: str
+    in_tooltip: bool
     price_precision: int
     change_precision: int
     volume_precision: int
@@ -142,8 +145,13 @@ class WaybarCrypto(object):
                 # duplicate entry, skip
                 continue
 
+            display_in_tooltip = DEFAULT_COIN_CONFIG_TOOLTIP
+            if "in_tooltip" in cfp[coin_name]:
+                display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
+
             coins[coin_name] = {
-                "icon": cfp[coin_name]["icon"],
+                "icon": cfp.get(coin_name, "icon"),
+                "in_tooltip": display_in_tooltip,
                 "price_precision": DEFAULT_PRECISION,
                 "change_precision": DEFAULT_PRECISION,
                 "volume_precision": DEFAULT_PRECISION,
@@ -156,7 +164,7 @@ class WaybarCrypto(object):
                             f"configured option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be an integer"
                         )
 
-                    precision_value = int(cfp[coin_name][coin_precision_option])
+                    precision_value = cfp.getint(coin_name, coin_precision_option)
                     if precision_value < MIN_PRECISION:
                         raise WaybarCryptoException(
                             f"value of option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be greater than {MIN_PRECISION}",
@@ -165,27 +173,26 @@ class WaybarCrypto(object):
                     coins[coin_name][coin_precision_option] = precision_value
 
         # The fiat currency used in the trading pair
-        currency = cfp["general"]["currency"].upper()
-        currency_symbol = cfp["general"]["currency_symbol"]
+        currency = cfp.get("general", "currency").upper()
+        currency_symbol = cfp.get("general", "currency_symbol")
 
         # Get a list of the chosen display options
-        display_options: list[str] = cfp["general"]["display"].split(",")
+        display_options: list[str] = cfp.get("general", "display").split(",")
 
         if len(display_options) == 0:
             display_options = DEFAULT_DISPLAY_OPTIONS
 
         for display_option in display_options:
-            if display_option not in DISPLAY_OPTIONS_FORMAT:
+            if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
                 raise WaybarCryptoException(f"invalid display option '{display_option}")
 
-        display_options_format = DISPLAY_OPTIONS_FORMAT
-        display_options_format["price"] = (
-            f"{currency_symbol}{display_options_format["price"]}"
-        )
+        display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
+        display_format_price = display_options_format["price"]
+        display_options_format["price"] = f"{currency_symbol}{display_format_price}"
 
         api_key: str | None = None
         if "api_key" in cfp["general"]:
-            api_key = cfp["general"]["api_key"]
+            api_key = cfp.get("general", "api_key")
 
         # If API_KEY_ENV exists, take precedence over the config file value
         api_key = os.getenv(key=API_KEY_ENV, default=api_key)
@@ -254,13 +261,13 @@ class WaybarCrypto(object):
 
         output_obj: WaybarOutput = {
             "text": "",
-            "tooltip": "Cryptocurrency metrics from Coinmarketcap:\n",
+            "tooltip": "",
             "class": CLASS_NAME,
         }
 
         # For each coin, populate our output_obj
         # with a string according to the display_options
-        for i, (coin_name, coin_config) in enumerate(self.config["coins"].items()):
+        for coin_name, coin_config in self.config["coins"].items():
             icon = coin_config["icon"]
             price_precision = coin_config["price_precision"]
             volume_precision = coin_config["volume_precision"]
@@ -270,8 +277,6 @@ class WaybarCrypto(object):
             pair_info = quotes_latest["data"][coin_name.upper()]["quote"][currency]
 
             output = f"{icon}"
-            if i > 0:
-                output = f" {output}"
 
             for display_option in display_options:
                 precision = DEFAULT_PRECISION
@@ -287,8 +292,14 @@ class WaybarCrypto(object):
                     dp=precision, val=value
                 )
 
-            output_obj["text"] += output
-            output_obj["tooltip"] += output
+            if coin_config["in_tooltip"]:
+                if output_obj["tooltip"] != "":
+                    output = f"\n{output}"
+                output_obj["tooltip"] += output
+            else:
+                if output_obj["text"] != "":
+                    output = f" {output}"
+                output_obj["text"] += output
 
         return output_obj
 
