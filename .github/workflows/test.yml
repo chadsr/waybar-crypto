@@ -10,7 +10,7 @@ on:
             - "pyproject.toml"
             - "config.ini.example"
 
-    pull_request_target:
+    pull_request:
         paths:
             - ".github/workflows/test.yml"
             - "**/*.py"
