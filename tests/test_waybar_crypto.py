@@ -13,6 +13,7 @@ CONFIG_PATH = f"{ABS_DIR}/../config.ini.example"
 def waybar_crypto():
     yield WaybarCrypto(CONFIG_PATH)
 
+
 @pytest.fixture()
 def quotes_latest():
     yield {
@@ -54,6 +55,7 @@ def quotes_latest():
             },
         },
     }
+
 
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
