@@ -9,54 +9,54 @@ ABS_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = f"{ABS_DIR}/../config.ini.example"
 
 
+@pytest.fixture()
+def waybar_crypto():
+    yield WaybarCrypto(CONFIG_PATH)
+
+@pytest.fixture()
+def quotes_latest():
+    yield {
+        "status": {
+            "timestamp": "2024-05-20T17:29:45.646Z",
+            "error_code": 0,
+            "error_message": None,
+        },
+        "data": {
+            "BTC": {
+                "quote": {
+                    "EUR": {
+                        "price": 62885.47621569202,
+                        "volume_24h": 25044422439.850758,
+                        "volume_change_24h": 60.5157,
+                        "percent_change_1h": 0.88305833,
+                        "percent_change_24h": 2.3000565,
+                        "percent_change_7d": 8.88835578,
+                        "percent_change_30d": 4.71056688,
+                        "percent_change_60d": 3.13017816,
+                        "percent_change_90d": 33.96699196,
+                    }
+                },
+            },
+            "ETH": {
+                "quote": {
+                    "EUR": {
+                        "price": 2891.33408409618,
+                        "volume_24h": 11289361021.62208,
+                        "volume_change_24h": 50.8811,
+                        "percent_change_1h": 0.56650814,
+                        "percent_change_24h": 2.18445121,
+                        "percent_change_7d": 6.56024063,
+                        "percent_change_30d": 0.04147897,
+                        "percent_change_60d": -10.18412449,
+                        "percent_change_90d": 8.36092599,
+                    }
+                },
+            },
+        },
+    }
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
-
-    @pytest.fixture()
-    def waybar_crypto():
-        yield WaybarCrypto(CONFIG_PATH)
-
-    @pytest.fixture()
-    def quotes_latest():
-        yield {
-            "status": {
-                "timestamp": "2024-05-20T17:29:45.646Z",
-                "error_code": 0,
-                "error_message": None,
-            },
-            "data": {
-                "BTC": {
-                    "quote": {
-                        "EUR": {
-                            "price": 62885.47621569202,
-                            "volume_24h": 25044422439.850758,
-                            "volume_change_24h": 60.5157,
-                            "percent_change_1h": 0.88305833,
-                            "percent_change_24h": 2.3000565,
-                            "percent_change_7d": 8.88835578,
-                            "percent_change_30d": 4.71056688,
-                            "percent_change_60d": 3.13017816,
-                            "percent_change_90d": 33.96699196,
-                        }
-                    },
-                },
-                "ETH": {
-                    "quote": {
-                        "EUR": {
-                            "price": 2891.33408409618,
-                            "volume_24h": 11289361021.62208,
-                            "volume_change_24h": 50.8811,
-                            "percent_change_1h": 0.56650814,
-                            "percent_change_24h": 2.18445121,
-                            "percent_change_7d": 6.56024063,
-                            "percent_change_30d": 0.04147897,
-                            "percent_change_60d": -10.18412449,
-                            "percent_change_90d": 8.36092599,
-                        }
-                    },
-                },
-            },
-        }
 
     def test_get_coinmarketcap_latest(self, waybar_crypto: WaybarCrypto):
         resp_quotes_latest = waybar_crypto.coinmarketcap_latest()
