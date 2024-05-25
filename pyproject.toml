@@ -15,9 +15,12 @@ pytest = "^8.2.1"
 pytest-cov = "^5.0.0"
 bandit = "^1.7.8"
 
-[tool.black]
+[tool.ruff]
 # Use the more relaxed max line length permitted in PEP8.
-line-length = 99
+line-length = 100
+
+[tool.black]
+line-length = 100
 
 [tool.bandit]
 exclude = ["test_*.py", "./venv/", "./env/", "./.env,tests"]
