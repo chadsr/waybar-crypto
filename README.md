@@ -75,13 +75,15 @@ display = price,percent_change_24h,percent_change_7d
 api_key = your_coinmarketcap_api_key
 
 [btc]
-icon = 
+icon = 
+in_tooltip = false
 price_precision = 2
 change_precision = 2
 volume_precision = 2
 
 [eth]
-icon = 
+icon = 
+in_tooltip = true
 price_precision = 2
 change_precision = 2
 volume_precision = 2
