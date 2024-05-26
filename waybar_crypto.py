@@ -6,9 +6,14 @@ from typing import TypedDict
 import requests
 import json
 import configparser
+import argparse
 
 API_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
 API_KEY_ENV = "COINMARKETCAP_API_KEY"
+
+XDG_CONFIG_HOME_ENV = "XDG_CONFIG_HOME"
+DEFAULT_XDG_CONFIG_HOME_PATH = "~/.config"
+CONFIG_DIR = "waybar-crypto"
 CONFIG_FILE = "config.ini"
 
 DEFAULT_PRECISION = 2
@@ -41,6 +46,10 @@ DEFAULT_DISPLAY_OPTIONS: list[str] = ["price"]
 DEFAULT_COIN_CONFIG_TOOLTIP = False
 
 TIMEOUT_SECONDS = 10
+
+
+class Args(TypedDict):
+    config_path: str
 
 
 class ConfigGeneral(TypedDict):
@@ -313,12 +322,35 @@ class WaybarCrypto(object):
         return output_obj
 
 
-def main():
-    # Get the absolute path of this script
-    abs_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = f"{abs_dir}/{CONFIG_FILE}"
+def parse_args() -> Args:
+    parser = argparse.ArgumentParser()
 
-    waybar_crypto = WaybarCrypto(config_path)
+    # Utilise XDG_CONFIG_HOME if it exists
+    xdg_config_home_path = os.getenv(XDG_CONFIG_HOME_ENV)
+    if not xdg_config_home_path:
+        xdg_config_home_path = DEFAULT_XDG_CONFIG_HOME_PATH
+
+    default_config_path = os.path.join(xdg_config_home_path, CONFIG_DIR, CONFIG_FILE)
+    parser.add_argument(
+        "-c",
+        "--config-path",
+        type=str,
+        default=default_config_path,
+        help=f"Path to the configuration file (default: '{default_config_path}')",
+    )
+    args = parser.parse_args()
+
+    return {"config_path": args.config_path}
+
+
+def main():
+    args = parse_args()
+
+    config_path = args["config_path"]
+    if not os.path.isfile(config_path):
+        raise WaybarCryptoException(f"configuration file not found at '{config_path}'")
+
+    waybar_crypto = WaybarCrypto(args["config_path"])
     quotes_latest = waybar_crypto.coinmarketcap_latest()
     output = waybar_crypto.waybar_output(quotes_latest)
 

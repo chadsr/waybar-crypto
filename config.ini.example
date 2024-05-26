@@ -4,6 +4,7 @@ currency_symbol = €
 display = price,percent_change_24h
 spacer_symbol = |
 api_key = your_coinmarketcap_api_key
+; COINMARKETCAP_API_KEY env variable can alternatively be used and will take precedence
 
 [btc]
 icon = 
