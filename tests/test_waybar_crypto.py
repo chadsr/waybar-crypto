@@ -1,7 +1,9 @@
 import os
+import argparse
 import pytest
+from unittest import mock
 
-from waybar_crypto import CLASS_NAME, ResponseQuotesLatest, WaybarCrypto
+from waybar_crypto import CLASS_NAME, ResponseQuotesLatest, WaybarCrypto, parse_args
 
 
 # Get the absolute path of this script
@@ -85,6 +87,19 @@ def quotes_latest():
             },
         },
     }
+
+
+TEST_CONFIG_PATH = "test_path"
+
+
+@mock.patch(
+    "argparse.ArgumentParser.parse_args",
+    return_value=argparse.Namespace(config_path=TEST_CONFIG_PATH),
+)
+def test_parse_args_custom_path(mock: mock.MagicMock):
+    args = parse_args()
+    assert "config_path" in args
+    assert args["config_path"] == TEST_CONFIG_PATH
 
 
 class TestWaybarCrypto:
