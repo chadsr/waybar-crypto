@@ -14,6 +14,20 @@ volume_precision = 2
 
 [eth]
 icon = 
+in_tooltip = false
+price_precision = 2
+change_precision = 2
+volume_precision = 2
+
+[avax]
+icon = AVAX
+in_tooltip = true
+price_precision = 2
+change_precision = 2
+volume_precision = 2
+
+[dot]
+icon = DOT
 in_tooltip = true
 price_precision = 2
 change_precision = 2
