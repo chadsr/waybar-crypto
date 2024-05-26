@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml/badge.svg)](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/chadsr/waybar-crypto/graph/badge.svg?token=DBLYX5C0ST)](https://codecov.io/gh/chadsr/waybar-crypto)
+![AUR Version](https://img.shields.io/aur/version/waybar-crypto)
 
 A [Waybar](https://github.com/Alexays/Waybar) module for displaying cryptocurrency market information, utilising the [CoinMarketCap API](https://coinmarketcap.com/api/documentation/v1/).
 
