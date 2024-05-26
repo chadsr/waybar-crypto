@@ -46,6 +46,7 @@ TIMEOUT_SECONDS = 10
 class ConfigGeneral(TypedDict):
     currency: str
     currency_symbol: str
+    spacer_symbol: str
     display_options: list[str]
     display_options_format: dict[str, str]
     api_key: str
@@ -176,6 +177,10 @@ class WaybarCrypto(object):
         currency = cfp.get("general", "currency").upper()
         currency_symbol = cfp.get("general", "currency_symbol")
 
+        spacer_symbol = ""
+        if "spacer_symbol" in cfp["general"]:
+            spacer_symbol = cfp.get("general", "spacer_symbol")
+
         # Get a list of the chosen display options
         display_options: list[str] = cfp.get("general", "display").split(",")
 
@@ -205,6 +210,7 @@ class WaybarCrypto(object):
             "general": {
                 "currency": currency,
                 "currency_symbol": currency_symbol,
+                "spacer_symbol": spacer_symbol,
                 "display_options": display_options,
                 "display_options_format": display_options_format,
                 "api_key": api_key,
@@ -258,6 +264,9 @@ class WaybarCrypto(object):
         currency = self.config["general"]["currency"]
         display_options = self.config["general"]["display_options"]
         display_options_format = self.config["general"]["display_options_format"]
+        spacer = self.config["general"]["spacer_symbol"]
+        if spacer != "":
+            spacer = f" {spacer}"
 
         output_obj: WaybarOutput = {
             "text": "",
@@ -298,7 +307,7 @@ class WaybarCrypto(object):
                 output_obj["tooltip"] += output
             else:
                 if output_obj["text"] != "":
-                    output = f" {output}"
+                    output = f"{spacer} {output}"
                 output_obj["text"] += output
 
         return output_obj
