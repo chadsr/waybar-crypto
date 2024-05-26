@@ -64,7 +64,7 @@ def quotes_latest():
                         "percent_change_7d": 2.46514204,
                         "percent_change_30d": 3.78312279,
                         "percent_change_60d": -30.74974196,
-                        "percent_change_90d": -0.83220421
+                        "percent_change_90d": -0.83220421,
                     }
                 },
             },
@@ -79,10 +79,10 @@ def quotes_latest():
                         "percent_change_7d": 7.19067559,
                         "percent_change_30d": 8.73368475,
                         "percent_change_60d": -19.8413195,
-                        "percent_change_90d": -2.24744556
+                        "percent_change_90d": -2.24744556,
                     }
                 }
-            }
+            },
         },
     }
 
