@@ -94,7 +94,7 @@ An example can be found in [`config.ini.example`](./config.ini.example) with fur
 
 ### Adding Cryptocurrencies
 
-For each cryptocurrency you wish to display, add a section as shown in the example above, where the section name is the **short** cryptocurrency name as found on [CoinMarketCap](https://coinmarketcap.com/).
+For each cryptocurrency you wish to display, add a section as shown in the [example file](./config.ini.example), where the section name is the **short** cryptocurrency name as found on [CoinMarketCap](https://coinmarketcap.com/).
 
 Valid options:
 
