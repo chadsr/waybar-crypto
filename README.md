@@ -71,6 +71,7 @@ The information displayed can then be customised by editing the `config.ini` con
 [general]
 currency = eur
 currency_symbol = €
+spacer_symbol = |
 display = price,percent_change_24h,percent_change_7d
 api_key = your_coinmarketcap_api_key
 
@@ -91,6 +92,7 @@ volume_precision = 2
 
 - **currency:** Any valid currency code should be accepted
 - **currency_symbol:** A corresponding symbol of the currency you wish to display
+- **spacer_symbol:** A string/character to use as a spacer between tickers. Comment out to disable.
 - **api_key:** CoinmarketCap API key obtained from their [API Dashboard](https://coinmarketcap.com/api).
 - **display:** A list of metrics you wish to display for each crypto currency. No spaces.
   Valid options are:

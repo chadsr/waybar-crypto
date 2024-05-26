@@ -1,10 +1,8 @@
 [general]
 currency = eur
 currency_symbol = €
-# display options: price,percent_change_1h,percent_change_24h,percent_change_7d,percent_change_30d,percent_change_60d,percent_change_90d,volume_24h,volume_change_24h
 display = price,percent_change_24h
-
-# set the key here, or with env COINMARKETCAP_API_KEY
+spacer_symbol = |
 api_key = your_coinmarketcap_api_key
 
 [btc]
