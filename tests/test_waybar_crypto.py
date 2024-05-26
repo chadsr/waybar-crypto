@@ -53,6 +53,36 @@ def quotes_latest():
                     }
                 },
             },
+            "AVAX": {
+                "quote": {
+                    "EUR": {
+                        "price": 34.15081432131667,
+                        "volume_24h": 206005212.6801803,
+                        "volume_change_24h": -21.5639,
+                        "percent_change_1h": -0.1101364,
+                        "percent_change_24h": -2.21628843,
+                        "percent_change_7d": 2.46514204,
+                        "percent_change_30d": 3.78312279,
+                        "percent_change_60d": -30.74974196,
+                        "percent_change_90d": -0.83220421
+                    }
+                },
+            },
+            "DOT": {
+                "quote": {
+                    "EUR": {
+                        "price": 6.9338115798384905,
+                        "volume_24h": 145060142.27706677,
+                        "volume_change_24h": 0.3964,
+                        "percent_change_1h": 0.59467025,
+                        "percent_change_24h": 3.37180336,
+                        "percent_change_7d": 7.19067559,
+                        "percent_change_30d": 8.73368475,
+                        "percent_change_60d": -19.8413195,
+                        "percent_change_90d": -2.24744556
+                    }
+                }
+            }
         },
     }
 
