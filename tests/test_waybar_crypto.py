@@ -3,12 +3,20 @@ import argparse
 import pytest
 from unittest import mock
 
-from waybar_crypto import CLASS_NAME, ResponseQuotesLatest, WaybarCrypto, parse_args
+from waybar_crypto import (
+    CLASS_NAME,
+    DEFAULT_XDG_CONFIG_HOME_PATH,
+    XDG_CONFIG_HOME_ENV,
+    ResponseQuotesLatest,
+    WaybarCrypto,
+    parse_args,
+)
 
 
 # Get the absolute path of this script
 ABS_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = f"{ABS_DIR}/../config.ini.example"
+TEST_CONFIG_PATH = "/test_path"
 
 
 @pytest.fixture()
@@ -89,7 +97,22 @@ def quotes_latest():
     }
 
 
-TEST_CONFIG_PATH = "test_path"
+def test_parse_args_default_path():
+    with mock.patch("sys.argv", ["waybar_crypto.py"]):
+        os.environ[XDG_CONFIG_HOME_ENV] = ""
+        args = parse_args()
+        assert "config_path" in args
+        assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
+            args["config_path"]
+        )
+
+
+def test_parse_args_custom_xdg_data_home():
+    with mock.patch("sys.argv", ["waybar_crypto.py"]):
+        os.environ[XDG_CONFIG_HOME_ENV] = TEST_CONFIG_PATH
+        args = parse_args()
+        assert "config_path" in args
+        assert TEST_CONFIG_PATH in args["config_path"]
 
 
 @mock.patch(
