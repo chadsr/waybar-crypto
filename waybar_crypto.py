@@ -195,7 +195,10 @@ def read_config(config_path: str) -> Config:
         spacer_symbol = cfp.get("general", "spacer_symbol")
 
     # Get a list of the chosen display options
-    display_options: list[str] = cfp.get("general", "display").split(",")
+    display_options: list[str] = []
+    display_options_str = cfp.get("general", "display")
+    if display_options_str and len(display_options_str) > 0:
+        display_options = display_options_str.split(",")
 
     if len(display_options) == 0:
         display_options = DEFAULT_DISPLAY_OPTIONS
