@@ -205,7 +205,7 @@ def read_config(config_path: str) -> Config:
 
     for display_option in display_options:
         if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
-            raise WaybarCryptoException(f"invalid display option '{display_option}")
+            raise WaybarCryptoException(f"invalid display option '{display_option}'")
 
     display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
     display_format_price = display_options_format["price"]
