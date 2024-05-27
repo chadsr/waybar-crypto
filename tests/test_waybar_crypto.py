@@ -23,6 +23,8 @@ LOGGER = logging.getLogger(__name__)
 
 TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
 API_KEY = os.getenv(TEST_API_KEY_ENV)
+if API_KEY == "":
+    API_KEY = None
 if API_KEY is None:
     LOGGER.warning("No test API key provided. Skipping API tests")
 
