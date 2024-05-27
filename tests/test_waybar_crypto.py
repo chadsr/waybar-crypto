@@ -1,20 +1,24 @@
 import os
+import tempfile
 import argparse
 import pytest
 from unittest import mock
 import logging
+import configparser
 
 from waybar_crypto import (
     API_KEY_ENV,
     CLASS_NAME,
     DEFAULT_DISPLAY_OPTIONS_FORMAT,
     DEFAULT_XDG_CONFIG_HOME_PATH,
+    MIN_PRECISION,
     XDG_CONFIG_HOME_ENV,
     CoinmarketcapApiException,
     Config,
     NoApiKeyException,
     ResponseQuotesLatest,
     WaybarCrypto,
+    WaybarCryptoException,
     parse_args,
     read_config,
 )
@@ -258,6 +262,23 @@ def test_read_config():
 def test_read_config_env():
     config = read_config(TEST_CONFIG_PATH)
     assert config["general"]["api_key"] == TEST_API_KEY
+
+
+def test_read_config_min_precision():
+    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+        cfp.read_file(f)
+        cfp.set("btc", "price_precision", str(MIN_PRECISION - 1))
+
+        with tempfile.NamedTemporaryFile(mode="w") as tmp:
+            cfp.write(tmp)
+            tmp.flush()
+            tmp_config_path = tmp.file.name
+
+            try:
+                _ = read_config(tmp_config_path)
+            except Exception as e:
+                assert isinstance(e, WaybarCryptoException)
 
 
 class TestWaybarCrypto:
