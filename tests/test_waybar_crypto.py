@@ -18,9 +18,7 @@ from waybar_crypto import (
 )
 
 
-# Get the absolute path of this script
-ABS_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_CONFIG_PATH = "/test_path"
+TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
 
 
@@ -28,7 +26,7 @@ TEST_API_KEY = "test_key"
 def config() -> Config:
     return {
         "general": {
-            "currency": "eur",
+            "currency": "EUR",
             "currency_symbol": "€",
             "spacer_symbol": "|",
             "display_options": [],
@@ -193,26 +191,51 @@ def test_parse_args_custom_path(mock: mock.MagicMock):
 
 
 @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
-def test_read_config(mock: mock.MagicMock):
+def test_read_config():
     config = read_config(TEST_CONFIG_PATH)
-
     assert "general" in config
     general = config["general"]
     assert isinstance(general, dict)
+
     assert "currency" in general
+    assert isinstance(general["currency"], str)
+    assert general["currency"].isupper() is True
+
     assert "currency_symbol" in general
+    assert isinstance(general["currency_symbol"], str)
+
     assert "spacer_symbol" in general
+    assert isinstance(general["spacer_symbol"], str)
+
     assert "display_options" in general
+    assert isinstance(general["display_options"], list)
+
     assert "display_options_format" in general
+    assert isinstance(general["display_options_format"], dict)
+
     assert "api_key" in general
+    assert isinstance(general["api_key"], str)
 
     assert "coins" in config
     coins = config["coins"]
     assert isinstance(coins, dict)
+    for coin_symbol, coin_config in coins.items():
+        assert coin_symbol.isupper() is True
+        assert isinstance(coin_config, dict)
+        assert "icon" in coin_config
+        assert isinstance(coin_config["icon"], str)
+        assert "in_tooltip" in coin_config
+        assert isinstance(coin_config["in_tooltip"], bool)
+        assert "price_precision" in coin_config
+        assert isinstance(coin_config["price_precision"], int)
+        assert "change_precision" in coin_config
+        assert isinstance(coin_config["change_precision"], int)
+        assert "volume_precision" in coin_config
+        assert isinstance(coin_config["volume_precision"], int)
 
 
 @mock.patch.dict(os.environ, {API_KEY_ENV: TEST_API_KEY})
-def test_read_config_env(mock: mock.MagicMock):
+def test_read_config_env():
     config = read_config(TEST_CONFIG_PATH)
 
     assert config["general"]["api_key"] == TEST_API_KEY
