@@ -363,7 +363,7 @@ def main():
     if not os.path.isfile(config_path):
         raise WaybarCryptoException(f"configuration file not found at '{config_path}'")
 
-    config = read_config(args["config_path"])
+    config = read_config(config_path)
     waybar_crypto = WaybarCrypto(config)
     quotes_latest = waybar_crypto.coinmarketcap_latest()
     output = waybar_crypto.waybar_output(quotes_latest)
