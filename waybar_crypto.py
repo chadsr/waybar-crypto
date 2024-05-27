@@ -160,10 +160,6 @@ def read_config(config_path: str) -> Config:
     coins: dict[str, ConfigCoin] = {}
     for coin_name in coin_names:
         coin_symbol = coin_name.upper()
-        if coin_symbol in coins:
-            # duplicate entry, skip
-            continue
-
         display_in_tooltip = DEFAULT_COIN_CONFIG_TOOLTIP
         if "in_tooltip" in cfp[coin_name]:
             display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
