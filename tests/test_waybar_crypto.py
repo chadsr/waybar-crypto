@@ -9,6 +9,7 @@ from waybar_crypto import (
     DEFAULT_DISPLAY_OPTIONS_FORMAT,
     DEFAULT_XDG_CONFIG_HOME_PATH,
     XDG_CONFIG_HOME_ENV,
+    CoinmarketcapApiException,
     Config,
     NoApiKeyException,
     ResponseQuotesLatest,
@@ -273,6 +274,13 @@ class TestWaybarCrypto:
                 for field, field_type in quote_fields_types.items():
                     assert field in quote_values
                     assert isinstance(quote_values[field], field_type)
+
+    @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
+    def test_get_coinmarketcap_latest_invalid_key(self, waybar_crypto: WaybarCrypto):
+        try:
+            _ = waybar_crypto.coinmarketcap_latest()
+        except Exception as e:
+            assert isinstance(e, CoinmarketcapApiException)
 
     def test_waybar_output(self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest):
         output = waybar_crypto.waybar_output(quotes_latest)
