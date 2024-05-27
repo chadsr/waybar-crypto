@@ -122,6 +122,10 @@ class WaybarCryptoException(Exception):
         self.message = message
 
 
+class NoApiKeyException(WaybarCryptoException):
+    pass
+
+
 class CoinmarketcapApiException(WaybarCryptoException):
     def __init__(self, message: str, error_code: int | None) -> None:
         super().__init__(message)
@@ -131,103 +135,117 @@ class CoinmarketcapApiException(WaybarCryptoException):
         return f"{self.message} ({self.error_code})"
 
 
-class WaybarCrypto(object):
-    def __init__(self, config_path: str):
-        self.config: Config = self.__parse_config_path(config_path)
+def read_config(config_path: str) -> Config:
+    """Read a configuration file
 
-    def __parse_config_path(self, config_path: str) -> Config:
-        # Attempt to load crypto.ini configuration file
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+    Args:
+        config_path (str): Path to a .ini configuration file
 
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                cfp.read_file(f)
-        except Exception as e:
-            raise WaybarCryptoException(f"failed to open config file: {e}")
+    Returns:
+        Config: Configuration dict object
+    """
 
-        # Assume any section that isn't 'general', is a coin
-        coin_names = [section for section in cfp.sections() if section != "general"]
+    cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
 
-        # Construct the coin configuration dict
-        coins: dict[str, ConfigCoin] = {}
-        for coin_name in coin_names:
-            if coin_name in coins:
-                # duplicate entry, skip
-                continue
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfp.read_file(f)
+    except Exception as e:
+        raise WaybarCryptoException(f"failed to open config file: {e}")
 
-            display_in_tooltip = DEFAULT_COIN_CONFIG_TOOLTIP
-            if "in_tooltip" in cfp[coin_name]:
-                display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
+    # Assume any section that isn't 'general', is a coin
+    coin_names = [section for section in cfp.sections() if section != "general"]
 
-            coins[coin_name] = {
-                "icon": cfp.get(coin_name, "icon"),
-                "in_tooltip": display_in_tooltip,
-                "price_precision": DEFAULT_PRECISION,
-                "change_precision": DEFAULT_PRECISION,
-                "volume_precision": DEFAULT_PRECISION,
-            }
+    # Construct the coin configuration dict
+    coins: dict[str, ConfigCoin] = {}
+    for coin_name in coin_names:
+        if coin_name in coins:
+            # duplicate entry, skip
+            continue
 
-            for coin_precision_option in COIN_PRECISION_OPTIONS:
-                if coin_precision_option in cfp[coin_name]:
-                    if not cfp[coin_name][coin_precision_option].isdigit():
-                        raise WaybarCryptoException(
-                            f"configured option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be an integer"
-                        )
+        display_in_tooltip = DEFAULT_COIN_CONFIG_TOOLTIP
+        if "in_tooltip" in cfp[coin_name]:
+            display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
 
-                    precision_value = cfp.getint(coin_name, coin_precision_option)
-                    if precision_value < MIN_PRECISION:
-                        raise WaybarCryptoException(
-                            f"value of option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be greater than {MIN_PRECISION}",
-                        )
-
-                    coins[coin_name][coin_precision_option] = precision_value
-
-        # The fiat currency used in the trading pair
-        currency = cfp.get("general", "currency").upper()
-        currency_symbol = cfp.get("general", "currency_symbol")
-
-        spacer_symbol = ""
-        if "spacer_symbol" in cfp["general"]:
-            spacer_symbol = cfp.get("general", "spacer_symbol")
-
-        # Get a list of the chosen display options
-        display_options: list[str] = cfp.get("general", "display").split(",")
-
-        if len(display_options) == 0:
-            display_options = DEFAULT_DISPLAY_OPTIONS
-
-        for display_option in display_options:
-            if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
-                raise WaybarCryptoException(f"invalid display option '{display_option}")
-
-        display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
-        display_format_price = display_options_format["price"]
-        display_options_format["price"] = f"{currency_symbol}{display_format_price}"
-
-        api_key: str | None = None
-        if "api_key" in cfp["general"]:
-            api_key = cfp.get("general", "api_key")
-
-        # If API_KEY_ENV exists, take precedence over the config file value
-        api_key = os.getenv(key=API_KEY_ENV, default=api_key)
-        if api_key is None:
-            raise WaybarCryptoException(
-                f"no API key provided in configuration file or with environment variable '{API_KEY_ENV}'"
-            )
-
-        config: Config = {
-            "general": {
-                "currency": currency,
-                "currency_symbol": currency_symbol,
-                "spacer_symbol": spacer_symbol,
-                "display_options": display_options,
-                "display_options_format": display_options_format,
-                "api_key": api_key,
-            },
-            "coins": coins,
+        coins[coin_name] = {
+            "icon": cfp.get(coin_name, "icon"),
+            "in_tooltip": display_in_tooltip,
+            "price_precision": DEFAULT_PRECISION,
+            "change_precision": DEFAULT_PRECISION,
+            "volume_precision": DEFAULT_PRECISION,
         }
 
-        return config
+        for coin_precision_option in COIN_PRECISION_OPTIONS:
+            if coin_precision_option in cfp[coin_name]:
+                if not cfp[coin_name][coin_precision_option].isdigit():
+                    raise WaybarCryptoException(
+                        f"configured option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be an integer"
+                    )
+
+                precision_value = cfp.getint(coin_name, coin_precision_option)
+                if precision_value < MIN_PRECISION:
+                    raise WaybarCryptoException(
+                        f"value of option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be greater than {MIN_PRECISION}",
+                    )
+
+                coins[coin_name][coin_precision_option] = precision_value
+
+    # The fiat currency used in the trading pair
+    currency = cfp.get("general", "currency").upper()
+    currency_symbol = cfp.get("general", "currency_symbol")
+
+    spacer_symbol = ""
+    if "spacer_symbol" in cfp["general"]:
+        spacer_symbol = cfp.get("general", "spacer_symbol")
+
+    # Get a list of the chosen display options
+    display_options: list[str] = cfp.get("general", "display").split(",")
+
+    if len(display_options) == 0:
+        display_options = DEFAULT_DISPLAY_OPTIONS
+
+    for display_option in display_options:
+        if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
+            raise WaybarCryptoException(f"invalid display option '{display_option}")
+
+    display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
+    display_format_price = display_options_format["price"]
+    display_options_format["price"] = f"{currency_symbol}{display_format_price}"
+
+    api_key: str | None = None
+    if "api_key" in cfp["general"]:
+        api_key = cfp.get("general", "api_key")
+        if api_key == "":
+            api_key = None
+
+    # If API_KEY_ENV exists, take precedence over the config file value
+    api_key = os.getenv(key=API_KEY_ENV, default=api_key)
+    if api_key is None:
+        raise NoApiKeyException(
+            f"no API key provided in configuration file or with environment variable '{API_KEY_ENV}'"
+        )
+
+    config: Config = {
+        "general": {
+            "currency": currency,
+            "currency_symbol": currency_symbol,
+            "spacer_symbol": spacer_symbol,
+            "display_options": display_options,
+            "display_options_format": display_options_format,
+            "api_key": api_key,
+        },
+        "coins": coins,
+    }
+
+    return config
+
+
+class WaybarCrypto(object):
+    def __init__(self, config: Config):
+        if config["general"]["api_key"] == "":
+            raise NoApiKeyException("No API key provided")
+
+        self.config: Config = config
 
     def coinmarketcap_latest(self) -> ResponseQuotesLatest:
         # Construct API query parameters
@@ -350,7 +368,8 @@ def main():
     if not os.path.isfile(config_path):
         raise WaybarCryptoException(f"configuration file not found at '{config_path}'")
 
-    waybar_crypto = WaybarCrypto(args["config_path"])
+    config = read_config(args["config_path"])
+    waybar_crypto = WaybarCrypto(config)
     quotes_latest = waybar_crypto.coinmarketcap_latest()
     output = waybar_crypto.waybar_output(quotes_latest)
 
