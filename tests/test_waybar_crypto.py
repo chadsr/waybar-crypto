@@ -4,36 +4,91 @@ import pytest
 from unittest import mock
 
 from waybar_crypto import (
+    API_KEY_ENV,
     CLASS_NAME,
+    DEFAULT_DISPLAY_OPTIONS_FORMAT,
     DEFAULT_XDG_CONFIG_HOME_PATH,
     XDG_CONFIG_HOME_ENV,
+    CoinmarketcapApiException,
+    Config,
+    NoApiKeyException,
     ResponseQuotesLatest,
     WaybarCrypto,
     parse_args,
+    read_config,
 )
 
+TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
+API_KEY = os.getenv(TEST_API_KEY_ENV)
 
-# Get the absolute path of this script
-ABS_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = f"{ABS_DIR}/../config.ini.example"
-TEST_CONFIG_PATH = "/test_path"
-
-
-@pytest.fixture()
-def waybar_crypto():
-    yield WaybarCrypto(CONFIG_PATH)
+TEST_CONFIG_PATH = "./config.ini.example"
+TEST_API_KEY = "test_key"
 
 
 @pytest.fixture()
-def quotes_latest():
-    yield {
+def config() -> Config:
+    return {
+        "general": {
+            "currency": "EUR",
+            "currency_symbol": "€",
+            "spacer_symbol": "|",
+            "display_options": [],
+            "display_options_format": DEFAULT_DISPLAY_OPTIONS_FORMAT,
+            "api_key": "some_api_key",
+        },
+        "coins": {
+            "btc": {
+                "icon": "BTC",
+                "in_tooltip": False,
+                "price_precision": 1,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+            "eth": {
+                "icon": "ETH",
+                "in_tooltip": False,
+                "price_precision": 2,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+            "dot": {
+                "icon": "DOT",
+                "in_tooltip": True,
+                "price_precision": 4,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+            "avax": {
+                "icon": "AVAX",
+                "in_tooltip": True,
+                "price_precision": 3,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+        },
+    }
+
+
+@pytest.fixture()
+def waybar_crypto(config: Config) -> WaybarCrypto:
+    return WaybarCrypto(config)
+
+
+@pytest.fixture()
+def quotes_latest() -> ResponseQuotesLatest:
+    return {
         "status": {
             "timestamp": "2024-05-20T17:29:45.646Z",
             "error_code": 0,
-            "error_message": None,
+            "error_message": "",
+            "elapsed": 5,
+            "credit_count": 1,
         },
         "data": {
             "BTC": {
+                "id": 1,
+                "name": "Bitcoin",
+                "symbol": "BTC",
                 "quote": {
                     "EUR": {
                         "price": 62885.47621569202,
@@ -45,10 +100,14 @@ def quotes_latest():
                         "percent_change_30d": 4.71056688,
                         "percent_change_60d": 3.13017816,
                         "percent_change_90d": 33.96699196,
+                        "last_updated": "2024-05-27T12:58:04.000Z",
                     }
                 },
             },
             "ETH": {
+                "id": 1027,
+                "name": "Ethereum",
+                "symbol": "ETH",
                 "quote": {
                     "EUR": {
                         "price": 2891.33408409618,
@@ -60,10 +119,14 @@ def quotes_latest():
                         "percent_change_30d": 0.04147897,
                         "percent_change_60d": -10.18412449,
                         "percent_change_90d": 8.36092599,
+                        "last_updated": "2024-05-27T12:58:04.000Z",
                     }
                 },
             },
             "AVAX": {
+                "id": 5805,
+                "name": "Avalanche",
+                "symbol": "AVAX",
                 "quote": {
                     "EUR": {
                         "price": 34.15081432131667,
@@ -75,10 +138,14 @@ def quotes_latest():
                         "percent_change_30d": 3.78312279,
                         "percent_change_60d": -30.74974196,
                         "percent_change_90d": -0.83220421,
+                        "last_updated": "2024-05-27T12:58:04.000Z",
                     }
                 },
             },
             "DOT": {
+                "id": 6636,
+                "name": "Polkadot",
+                "symbol": "DOT",
                 "quote": {
                     "EUR": {
                         "price": 6.9338115798384905,
@@ -90,16 +157,17 @@ def quotes_latest():
                         "percent_change_30d": 8.73368475,
                         "percent_change_60d": -19.8413195,
                         "percent_change_90d": -2.24744556,
+                        "last_updated": "2024-05-27T12:58:04.000Z",
                     }
-                }
+                },
             },
         },
     }
 
 
+@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: ""})
 def test_parse_args_default_path():
     with mock.patch("sys.argv", ["waybar_crypto.py"]):
-        os.environ[XDG_CONFIG_HOME_ENV] = ""
         args = parse_args()
         assert "config_path" in args
         assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
@@ -107,9 +175,9 @@ def test_parse_args_default_path():
         )
 
 
+@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: TEST_CONFIG_PATH})
 def test_parse_args_custom_xdg_data_home():
     with mock.patch("sys.argv", ["waybar_crypto.py"]):
-        os.environ[XDG_CONFIG_HOME_ENV] = TEST_CONFIG_PATH
         args = parse_args()
         assert "config_path" in args
         assert TEST_CONFIG_PATH in args["config_path"]
@@ -125,9 +193,63 @@ def test_parse_args_custom_path(mock: mock.MagicMock):
     assert args["config_path"] == TEST_CONFIG_PATH
 
 
+@mock.patch.dict(os.environ, {API_KEY_ENV: ""})
+def test_read_config():
+    config = read_config(TEST_CONFIG_PATH)
+    assert "general" in config
+    general = config["general"]
+    assert isinstance(general, dict)
+
+    assert "currency" in general
+    assert isinstance(general["currency"], str)
+    assert general["currency"].isupper() is True
+
+    assert "currency_symbol" in general
+    assert isinstance(general["currency_symbol"], str)
+
+    assert "spacer_symbol" in general
+    assert isinstance(general["spacer_symbol"], str)
+
+    assert "display_options" in general
+    assert isinstance(general["display_options"], list)
+
+    assert "display_options_format" in general
+    assert isinstance(general["display_options_format"], dict)
+
+    assert "api_key" in general
+    assert isinstance(general["api_key"], str)
+
+    assert "coins" in config
+    coins = config["coins"]
+    assert isinstance(coins, dict)
+    for coin_symbol, coin_config in coins.items():
+        assert coin_symbol.isupper() is True
+        assert isinstance(coin_config, dict)
+        assert "icon" in coin_config
+        assert isinstance(coin_config["icon"], str)
+        assert "in_tooltip" in coin_config
+        assert isinstance(coin_config["in_tooltip"], bool)
+        assert "price_precision" in coin_config
+        assert isinstance(coin_config["price_precision"], int)
+        assert "change_precision" in coin_config
+        assert isinstance(coin_config["change_precision"], int)
+        assert "volume_precision" in coin_config
+        assert isinstance(coin_config["volume_precision"], int)
+
+
+@mock.patch.dict(os.environ, {API_KEY_ENV: TEST_API_KEY})
+def test_read_config_env():
+    config = read_config(TEST_CONFIG_PATH)
+    assert config["general"]["api_key"] == TEST_API_KEY
+
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
+    @pytest.mark.skipif(
+        API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
+    )
+    @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
     def test_get_coinmarketcap_latest(self, waybar_crypto: WaybarCrypto):
         resp_quotes_latest = waybar_crypto.coinmarketcap_latest()
         assert isinstance(resp_quotes_latest, dict)
@@ -159,6 +281,13 @@ class TestWaybarCrypto:
                     assert field in quote_values
                     assert isinstance(quote_values[field], field_type)
 
+    @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
+    def test_get_coinmarketcap_latest_invalid_key(self, waybar_crypto: WaybarCrypto):
+        try:
+            _ = waybar_crypto.coinmarketcap_latest()
+        except Exception as e:
+            assert isinstance(e, CoinmarketcapApiException)
+
     def test_waybar_output(self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest):
         output = waybar_crypto.waybar_output(quotes_latest)
         assert isinstance(output, dict)
@@ -168,3 +297,11 @@ class TestWaybarCrypto:
             assert isinstance(output[field], str)
 
         assert output["class"] == CLASS_NAME
+
+    @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
+    def test_no_api_key(self, config: Config):
+        try:
+            config["general"]["api_key"] = ""
+            _ = WaybarCrypto(config)
+        except Exception as e:
+            assert isinstance(e, NoApiKeyException)
