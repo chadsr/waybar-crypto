@@ -246,6 +246,9 @@ def test_read_config_env():
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
+    @pytest.mark.skipif(
+        API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
+    )
     @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
     def test_get_coinmarketcap_latest(self, waybar_crypto: WaybarCrypto):
         resp_quotes_latest = waybar_crypto.coinmarketcap_latest()
