@@ -359,7 +359,7 @@ def parse_args() -> Args:
 def main():
     args = parse_args()
 
-    config_path = args["config_path"]
+    config_path = os.path.expanduser(args["config_path"])
     if not os.path.isfile(config_path):
         raise WaybarCryptoException(f"configuration file not found at '{config_path}'")
 
