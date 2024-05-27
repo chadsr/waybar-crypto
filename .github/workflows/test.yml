@@ -57,7 +57,7 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Run Pytest
         env:
-          COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
+          TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
         run: |
           source .venv/bin/activate
           pytest -vv --cov=./ --cov-report=xml tests/
