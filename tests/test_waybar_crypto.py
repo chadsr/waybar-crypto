@@ -334,6 +334,23 @@ def test_read_config_default_display_options():
             assert display_options == DEFAULT_DISPLAY_OPTIONS
 
 
+def test_read_config_display_invalid():
+    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+        cfp.read_file(f)
+        cfp.set("general", "display", "notvalid")
+
+        with tempfile.NamedTemporaryFile(mode="w") as tmp:
+            cfp.write(tmp)
+            tmp.flush()
+            tmp_config_path = tmp.file.name
+
+            try:
+                _ = read_config(tmp_config_path)
+            except Exception as e:
+                assert isinstance(e, WaybarCryptoException)
+
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
