@@ -15,7 +15,7 @@ A [Waybar](https://github.com/Alexays/Waybar) module for displaying cryptocurren
 
 ## Installation
 
-### AUR
+### [AUR](https://aur.archlinux.org/packages/waybar-crypto)
 
 ```shell
 yay -S waybar-crypto
