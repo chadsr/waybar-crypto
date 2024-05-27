@@ -159,7 +159,8 @@ def read_config(config_path: str) -> Config:
     # Construct the coin configuration dict
     coins: dict[str, ConfigCoin] = {}
     for coin_name in coin_names:
-        if coin_name in coins:
+        coin_symbol = coin_name.upper()
+        if coin_symbol in coins:
             # duplicate entry, skip
             continue
 
@@ -167,7 +168,7 @@ def read_config(config_path: str) -> Config:
         if "in_tooltip" in cfp[coin_name]:
             display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
 
-        coins[coin_name] = {
+        coins[coin_symbol] = {
             "icon": cfp.get(coin_name, "icon"),
             "in_tooltip": display_in_tooltip,
             "price_precision": DEFAULT_PRECISION,
@@ -188,7 +189,7 @@ def read_config(config_path: str) -> Config:
                         f"value of option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be greater than {MIN_PRECISION}",
                     )
 
-                coins[coin_name][coin_precision_option] = precision_value
+                coins[coin_symbol][coin_precision_option] = precision_value
 
     # The fiat currency used in the trading pair
     currency = cfp.get("general", "currency").upper()
