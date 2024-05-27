@@ -276,10 +276,8 @@ def test_read_config_min_precision():
             tmp.flush()
             tmp_config_path = tmp.file.name
 
-            try:
+            with pytest.raises(WaybarCryptoException):
                 _ = read_config(tmp_config_path)
-            except Exception as e:
-                assert isinstance(e, WaybarCryptoException)
 
 
 def test_read_config_display_options_single():
@@ -345,13 +343,10 @@ def test_read_config_display_invalid():
             tmp.flush()
             tmp_config_path = tmp.file.name
 
-            try:
+            with pytest.raises(WaybarCryptoException):
                 _ = read_config(tmp_config_path)
-            except Exception as e:
-                assert isinstance(e, WaybarCryptoException)
 
 
-@mock.patch.dict(os.environ, {API_KEY_ENV: ""})
 def test_read_config_no_api_key():
     with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
         cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
@@ -363,10 +358,8 @@ def test_read_config_no_api_key():
             tmp.flush()
             tmp_config_path = tmp.file.name
 
-            try:
+            with pytest.raises(NoApiKeyException):
                 _ = read_config(tmp_config_path)
-            except Exception as e:
-                assert isinstance(e, NoApiKeyException)
 
 
 class TestWaybarCrypto:
@@ -411,10 +404,8 @@ class TestWaybarCrypto:
 
     @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
     def test_get_coinmarketcap_latest_invalid_key(self, waybar_crypto: WaybarCrypto):
-        try:
+        with pytest.raises(CoinmarketcapApiException):
             _ = waybar_crypto.coinmarketcap_latest()
-        except Exception as e:
-            assert isinstance(e, CoinmarketcapApiException)
 
     def test_waybar_output(self, waybar_crypto: WaybarCrypto, quotes_latest: ResponseQuotesLatest):
         output = waybar_crypto.waybar_output(quotes_latest)
@@ -428,8 +419,6 @@ class TestWaybarCrypto:
 
     @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
     def test_no_api_key(self, config: Config):
-        try:
+        with pytest.raises(NoApiKeyException):
             config["general"]["api_key"] = ""
             _ = WaybarCrypto(config)
-        except Exception as e:
-            assert isinstance(e, NoApiKeyException)
