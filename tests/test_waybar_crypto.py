@@ -2,6 +2,7 @@ import os
 import argparse
 import pytest
 from unittest import mock
+import logging
 
 from waybar_crypto import (
     API_KEY_ENV,
@@ -18,8 +19,13 @@ from waybar_crypto import (
     read_config,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
 API_KEY = os.getenv(TEST_API_KEY_ENV)
+if API_KEY is None:
+    LOGGER.warning("No test API key provided. Skipping API tests")
+
 
 TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
