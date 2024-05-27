@@ -35,6 +35,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     runs-on: "ubuntu-latest"
+    environment: "test"
     steps:
       - uses: actions/checkout@v4
       - name: Install Python 3
