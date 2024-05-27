@@ -31,7 +31,7 @@ def config() -> Config:
             "spacer_symbol": "|",
             "display_options": [],
             "display_options_format": DEFAULT_DISPLAY_OPTIONS_FORMAT,
-            "api_key": "test_key",
+            "api_key": "some_api_key",
         },
         "coins": {
             "btc": {
