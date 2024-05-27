@@ -28,7 +28,6 @@ if API_KEY == "":
 if API_KEY is None:
     LOGGER.warning("No test API key provided. Skipping API tests")
 
-
 TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
 
@@ -258,7 +257,9 @@ class TestWaybarCrypto:
         API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
     )
     @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
-    def test_get_coinmarketcap_latest(self, waybar_crypto: WaybarCrypto):
+    def test_get_coinmarketcap_latest(self):
+        config = read_config(TEST_CONFIG_PATH)
+        waybar_crypto = WaybarCrypto(config)
         resp_quotes_latest = waybar_crypto.coinmarketcap_latest()
         assert isinstance(resp_quotes_latest, dict)
 
