@@ -18,6 +18,8 @@ from waybar_crypto import (
     read_config,
 )
 
+TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
+API_KEY = os.getenv(TEST_API_KEY_ENV)
 
 TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
@@ -244,6 +246,7 @@ def test_read_config_env():
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
+    @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
     def test_get_coinmarketcap_latest(self, waybar_crypto: WaybarCrypto):
         resp_quotes_latest = waybar_crypto.coinmarketcap_latest()
         assert isinstance(resp_quotes_latest, dict)
