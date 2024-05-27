@@ -162,9 +162,9 @@ def quotes_latest() -> ResponseQuotesLatest:
     }
 
 
+@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: ""})
 def test_parse_args_default_path():
     with mock.patch("sys.argv", ["waybar_crypto.py"]):
-        os.environ[XDG_CONFIG_HOME_ENV] = ""
         args = parse_args()
         assert "config_path" in args
         assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
@@ -172,9 +172,9 @@ def test_parse_args_default_path():
         )
 
 
+@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: TEST_CONFIG_PATH})
 def test_parse_args_custom_xdg_data_home():
     with mock.patch("sys.argv", ["waybar_crypto.py"]):
-        os.environ[XDG_CONFIG_HOME_ENV] = TEST_CONFIG_PATH
         args = parse_args()
         assert "config_path" in args
         assert TEST_CONFIG_PATH in args["config_path"]
@@ -237,7 +237,6 @@ def test_read_config():
 @mock.patch.dict(os.environ, {API_KEY_ENV: TEST_API_KEY})
 def test_read_config_env():
     config = read_config(TEST_CONFIG_PATH)
-
     assert config["general"]["api_key"] == TEST_API_KEY
 
 
