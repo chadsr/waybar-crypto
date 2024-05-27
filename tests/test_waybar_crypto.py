@@ -362,6 +362,11 @@ def test_read_config_no_api_key():
                 _ = read_config(tmp_config_path)
 
 
+def test_read_config_invalid_path():
+    with pytest.raises(WaybarCryptoException):
+        _ = read_config("/invalid/config.ini")
+
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
