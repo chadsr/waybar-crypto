@@ -178,11 +178,6 @@ def read_config(config_path: str) -> Config:
 
         for coin_precision_option in COIN_PRECISION_OPTIONS:
             if coin_precision_option in cfp[coin_name]:
-                if not cfp[coin_name][coin_precision_option].isdigit():
-                    raise WaybarCryptoException(
-                        f"configured option '{coin_precision_option}' for cryptocurrency '{coin_name}' must be an integer"
-                    )
-
                 precision_value = cfp.getint(coin_name, coin_precision_option)
                 if precision_value < MIN_PRECISION:
                     raise WaybarCryptoException(
