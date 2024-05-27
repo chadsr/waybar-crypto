@@ -5,6 +5,7 @@ import pytest
 from unittest import mock
 import logging
 import configparser
+import json
 
 from waybar_crypto import (
     API_KEY_ENV,
@@ -20,6 +21,7 @@ from waybar_crypto import (
     ResponseQuotesLatest,
     WaybarCrypto,
     WaybarCryptoException,
+    main,
     parse_args,
     read_config,
 )
@@ -427,3 +429,21 @@ class TestWaybarCrypto:
         with pytest.raises(NoApiKeyException):
             config["general"]["api_key"] = ""
             _ = WaybarCrypto(config)
+
+
+@pytest.mark.skipif(API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'")
+@mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
+@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
+def test_main(capsys):
+    main()
+    captured = capsys.readouterr()
+    waybar_obj = json.loads(captured.out)
+    assert "text" in waybar_obj
+    assert "tooltip" in waybar_obj
+    assert "class" in waybar_obj
+
+
+@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "/invalid/config.ini"])
+def test_main_config_path_invalid():
+    with pytest.raises(WaybarCryptoException):
+        main()
