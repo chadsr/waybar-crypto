@@ -4,7 +4,7 @@ description = "A Waybar module for displaying cryptocurrency market information 
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = { file = "LICENSE.md" }
 requires-python = ">=3.8"
-dependencies = ["requests", "setuptools"]
+dependencies = ["requests"]
 dynamic = ["version", "readme"]
 
 [project.scripts]
