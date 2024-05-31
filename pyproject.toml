@@ -1,6 +1,6 @@
 [project]
 name = "waybar-crypto"
-version = "v1.5.3"
+version = "v1.5.4"
 description = "A Waybar module for displaying cryptocurrency market information from CoinMarketCap."
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = { file = "LICENSE.md" }
