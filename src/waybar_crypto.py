@@ -8,7 +8,7 @@ import json
 import configparser
 import argparse
 
-VERSION = "1.5.5"
+VERSION = "1.5.6"
 
 API_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
 API_KEY_ENV = "COINMARKETCAP_API_KEY"
