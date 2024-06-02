@@ -43,11 +43,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
       - name: Install dependencies
-        run: pip install .[dev,tests]
+        run: pip install -e .[dev,tests]
       - name: Run Pytest
         env:
           TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
-        run: pytest -vv --cov=./ --cov-report=xml tests/
+        run: pytest -vv --cov=./src --cov-report=xml tests/
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
