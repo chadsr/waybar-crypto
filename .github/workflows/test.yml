@@ -53,4 +53,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Run Bandit
-        run: bandit ./waybar_crypto.py
+        run: bandit -r ./src
