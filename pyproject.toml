@@ -3,7 +3,7 @@ name = "waybar-crypto"
 description = "A Waybar module for displaying cryptocurrency market information from CoinMarketCap."
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = { file = "LICENSE.md" }
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = ["requests"]
 dynamic = ["version", "readme"]
 
