@@ -49,7 +49,7 @@ jobs:
           TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
         run: pytest -vv --cov=./src --cov-report=xml tests/
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Run Bandit
