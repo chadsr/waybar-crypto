@@ -2,7 +2,8 @@
 name = "waybar-crypto"
 description = "A Waybar module for displaying cryptocurrency market information from CoinMarketCap."
 authors = [{ name = "Ross", email = "git@ross.ch" }]
-license = { file = "LICENSE.md" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = ["requests"]
 dynamic = ["version", "readme"]
@@ -13,6 +14,10 @@ waybar-crypto = "waybar_crypto:main"
 [project.optional-dependencies]
 dev = ["ruff", "bandit", "pre-commit>=3"]
 tests = ["pytest>=8", "pytest-cov>=5"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = ["waybar_crypto"]
 
 [tool.setuptools.dynamic]
 version = { attr = "waybar_crypto.VERSION" }
