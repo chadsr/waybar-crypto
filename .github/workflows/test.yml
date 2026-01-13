@@ -24,7 +24,7 @@ jobs:
       - name: Install Python 3
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - uses: pre-commit/action@v3.0.1
         env:
           RUFF_OUTPUT_FORMAT: github
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13", "3.14"]
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
