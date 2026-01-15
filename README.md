@@ -57,7 +57,8 @@ An example can be found in [`config.ini.example`](./config.ini.example) with fur
     "format": "{}",
     "interval": 600,
     "return-type": "json",
-    "exec": "waybar-crypto", // change this if you installed manually
+    "exec": "waybar-crypto" // system-wide install (e.g. from AUR)
+//  "exec": "env PYTHONPATH=/path/to/repo python -m waybar_crypto", // manual install
     "exec-if": "ping pro-api.coinmarketcap.com -c1"
 }
 ```
