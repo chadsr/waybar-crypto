@@ -31,6 +31,8 @@ COIN_PRECISION_OPTIONS: set[str] = set(
     ]
 )
 
+FORMAT_OPTION_PREFIX = "format_"
+
 FLOAT_FORMATTER = "{val:.{dp}f}"
 DEFAULT_DISPLAY_OPTIONS_FORMAT: dict[str, str] = {
     "price": f"{FLOAT_FORMATTER}",
@@ -63,12 +65,13 @@ class ConfigGeneral(TypedDict):
     api_key: str
 
 
-class ConfigCoin(TypedDict):
+class ConfigCoin(TypedDict, total=False):
     icon: str
     in_tooltip: bool
     price_precision: int
     change_precision: int
     volume_precision: int
+    display_options_format: dict[str, str]
 
 
 class Config(TypedDict):
@@ -184,6 +187,16 @@ def read_config(config_path: str) -> Config:
 
                 coins[coin_symbol][coin_precision_option] = precision_value
 
+        # Parse per-coin format overrides
+        coin_formats: dict[str, str] = {}
+        for display_key in DEFAULT_DISPLAY_OPTIONS_FORMAT:
+            format_option = f"{FORMAT_OPTION_PREFIX}{display_key}"
+            if format_option in cfp[coin_name]:
+                coin_formats[display_key] = cfp.get(coin_name, format_option)
+
+        if coin_formats:
+            coins[coin_symbol]["display_options_format"] = coin_formats
+
     # The fiat currency used in the trading pair
     currency = cfp.get("general", "currency").upper()
     currency_symbol = cfp.get("general", "currency_symbol")
@@ -195,19 +208,26 @@ def read_config(config_path: str) -> Config:
     # Get a list of the chosen display options
     display_options: list[str] = []
     display_options_str = cfp.get("general", "display")
-    if display_options_str and len(display_options_str) > 0:
+    if display_options_str:
         display_options = display_options_str.split(",")
 
-    if len(display_options) == 0:
+    if not display_options:
         display_options = DEFAULT_DISPLAY_OPTIONS
 
     for display_option in display_options:
         if display_option not in DEFAULT_DISPLAY_OPTIONS_FORMAT:
             raise WaybarCryptoException(f"invalid display option '{display_option}'")
 
-    display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT
+    # Start with a copy of default formats
+    display_options_format = DEFAULT_DISPLAY_OPTIONS_FORMAT.copy()
     display_format_price = display_options_format["price"]
     display_options_format["price"] = f"{currency_symbol}{display_format_price}"
+
+    # Parse global format overrides from [general] section
+    for display_key in DEFAULT_DISPLAY_OPTIONS_FORMAT:
+        format_option = f"{FORMAT_OPTION_PREFIX}{display_key}"
+        if format_option in cfp["general"]:
+            display_options_format[display_key] = cfp.get("general", format_option)
 
     api_key: str | None = None
     if "api_key" in cfp["general"]:
@@ -311,6 +331,9 @@ class WaybarCrypto(object):
 
             output = f"{icon}"
 
+            # Get per-coin format overrides if available
+            coin_format_overrides = coin_config.get("display_options_format", {})
+
             for display_option in display_options:
                 precision = DEFAULT_PRECISION
                 if "volume" in display_option:
@@ -321,9 +344,11 @@ class WaybarCrypto(object):
                     precision = price_precision
 
                 value = round(pair_info[display_option], precision)
-                output += f" {display_options_format[display_option]}".format(
-                    dp=precision, val=value
+                # Use per-coin format if available, otherwise use global format
+                format_str = coin_format_overrides.get(
+                    display_option, display_options_format[display_option]
                 )
+                output += f" {format_str}".format(dp=precision, val=value)
 
             if coin_config["in_tooltip"]:
                 if output_obj["tooltip"] != "":

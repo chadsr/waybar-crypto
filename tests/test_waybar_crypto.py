@@ -369,6 +369,143 @@ def test_read_config_invalid_path():
         _ = read_config("/invalid/config.ini")
 
 
+def test_read_config_global_format_options():
+    """Test that global format options are parsed from [general] section."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+        f.write("""[general]
+currency = usd
+currency_symbol = $
+display = price,percent_change_24h
+api_key = test_key
+format_price = ${val:.{dp}f} USD
+format_percent_change_24h = ({val:+.{dp}f}%)
+
+[btc]
+icon = BTC
+""")
+        f.flush()
+        config = read_config(f.name)
+        os.unlink(f.name)
+
+    assert config["general"]["display_options_format"]["price"] == "${val:.{dp}f} USD"
+    assert config["general"]["display_options_format"]["percent_change_24h"] == "({val:+.{dp}f}%)"
+
+
+def test_read_config_per_coin_format_options():
+    """Test that per-coin format options are parsed."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+        f.write("""[general]
+currency = usd
+currency_symbol = $
+display = price
+api_key = test_key
+
+[btc]
+icon = BTC
+format_price = ₿{val:.{dp}f}
+
+[eth]
+icon = ETH
+""")
+        f.flush()
+        config = read_config(f.name)
+        os.unlink(f.name)
+
+    # BTC should have custom format (keys are uppercased by read_config)
+    assert "display_options_format" in config["coins"]["BTC"]
+    assert config["coins"]["BTC"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
+    # ETH should not have custom format
+    assert "display_options_format" not in config["coins"]["ETH"]
+
+
+def test_waybar_output_with_custom_format():
+    """Test that custom format strings are used in output."""
+    config: Config = {
+        "general": {
+            "currency": "USD",
+            "currency_symbol": "$",
+            "spacer_symbol": "",
+            "display_options": ["price"],
+            "display_options_format": {"price": "${val:.{dp}f}"},
+            "api_key": "test_key",
+        },
+        "coins": {
+            "BTC": {
+                "icon": "₿",
+                "in_tooltip": False,
+                "price_precision": 0,
+                "change_precision": 2,
+                "volume_precision": 2,
+                "display_options_format": {"price": "BTC:{val:.{dp}f}"},
+            },
+            "ETH": {
+                "icon": "Ξ",
+                "in_tooltip": False,
+                "price_precision": 0,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+        },
+    }
+
+    quotes_latest: ResponseQuotesLatest = {
+        "status": {
+            "timestamp": "2024-01-01T00:00:00.000Z",
+            "error_code": 0,
+            "error_message": "",
+            "elapsed": 1,
+            "credit_count": 1,
+        },
+        "data": {
+            "BTC": {
+                "id": 1,
+                "name": "Bitcoin",
+                "symbol": "BTC",
+                "quote": {
+                    "USD": {
+                        "price": 50000.0,
+                        "volume_24h": 0.0,
+                        "volume_change_24h": 0.0,
+                        "percent_change_1h": 0.0,
+                        "percent_change_24h": 0.0,
+                        "percent_change_7d": 0.0,
+                        "percent_change_30d": 0.0,
+                        "percent_change_60d": 0.0,
+                        "percent_change_90d": 0.0,
+                        "last_updated": "2024-01-01T00:00:00.000Z",
+                    }
+                },
+            },
+            "ETH": {
+                "id": 2,
+                "name": "Ethereum",
+                "symbol": "ETH",
+                "quote": {
+                    "USD": {
+                        "price": 3000.0,
+                        "volume_24h": 0.0,
+                        "volume_change_24h": 0.0,
+                        "percent_change_1h": 0.0,
+                        "percent_change_24h": 0.0,
+                        "percent_change_7d": 0.0,
+                        "percent_change_30d": 0.0,
+                        "percent_change_60d": 0.0,
+                        "percent_change_90d": 0.0,
+                        "last_updated": "2024-01-01T00:00:00.000Z",
+                    }
+                },
+            },
+        },
+    }
+
+    waybar_crypto = WaybarCrypto(config)
+    output = waybar_crypto.waybar_output(quotes_latest)
+
+    # BTC should use per-coin format, ETH should use global format
+    assert "BTC:50000" in output["text"]  # Per-coin format
+    assert "$3000" in output["text"]  # Global format
+
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
