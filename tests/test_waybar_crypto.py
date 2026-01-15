@@ -247,7 +247,7 @@ def test_read_config():
     coins = config["coins"]
     assert isinstance(coins, dict)
     for coin_symbol, coin_config in coins.items():
-        assert coin_symbol.isupper() is True
+        assert isinstance(coin_symbol, str) and len(coin_symbol) > 0
         assert isinstance(coin_config, dict)
         assert "icon" in coin_config
         assert isinstance(coin_config["icon"], str)
@@ -369,6 +369,143 @@ def test_read_config_invalid_path():
         _ = read_config("/invalid/config.ini")
 
 
+def test_read_config_global_format_options():
+    """Test that global format options are parsed from [general] section."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+        f.write("""[general]
+currency = usd
+currency_symbol = $
+display = price,percent_change_24h
+api_key = test_key
+format_price = ${val:.{dp}f} USD
+format_percent_change_24h = ({val:+.{dp}f}%)
+
+[btc]
+icon = BTC
+""")
+        f.flush()
+        config = read_config(f.name)
+        os.unlink(f.name)
+
+    assert config["general"]["display_options_format"]["price"] == "${val:.{dp}f} USD"
+    assert config["general"]["display_options_format"]["percent_change_24h"] == "({val:+.{dp}f}%)"
+
+
+def test_read_config_per_coin_format_options():
+    """Test that per-coin format options are parsed."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+        f.write("""[general]
+currency = usd
+currency_symbol = $
+display = price
+api_key = test_key
+
+[btc]
+icon = BTC
+format_price = ₿{val:.{dp}f}
+
+[eth]
+icon = ETH
+""")
+        f.flush()
+        config = read_config(f.name)
+        os.unlink(f.name)
+
+    # BTC should have custom format (keys preserve original case from config)
+    assert "display_options_format" in config["coins"]["btc"]
+    assert config["coins"]["btc"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
+    # ETH should not have custom format
+    assert "display_options_format" not in config["coins"]["eth"]
+
+
+def test_waybar_output_with_custom_format():
+    """Test that custom format strings are used in output."""
+    config: Config = {
+        "general": {
+            "currency": "USD",
+            "currency_symbol": "$",
+            "spacer_symbol": "",
+            "display_options": ["price"],
+            "display_options_format": {"price": "${val:.{dp}f}"},
+            "api_key": "test_key",
+        },
+        "coins": {
+            "BTC": {
+                "icon": "₿",
+                "in_tooltip": False,
+                "price_precision": 0,
+                "change_precision": 2,
+                "volume_precision": 2,
+                "display_options_format": {"price": "BTC:{val:.{dp}f}"},
+            },
+            "ETH": {
+                "icon": "Ξ",
+                "in_tooltip": False,
+                "price_precision": 0,
+                "change_precision": 2,
+                "volume_precision": 2,
+            },
+        },
+    }
+
+    quotes_latest: ResponseQuotesLatest = {
+        "status": {
+            "timestamp": "2024-01-01T00:00:00.000Z",
+            "error_code": 0,
+            "error_message": "",
+            "elapsed": 1,
+            "credit_count": 1,
+        },
+        "data": {
+            "BTC": {
+                "id": 1,
+                "name": "Bitcoin",
+                "symbol": "BTC",
+                "quote": {
+                    "USD": {
+                        "price": 50000.0,
+                        "volume_24h": 0.0,
+                        "volume_change_24h": 0.0,
+                        "percent_change_1h": 0.0,
+                        "percent_change_24h": 0.0,
+                        "percent_change_7d": 0.0,
+                        "percent_change_30d": 0.0,
+                        "percent_change_60d": 0.0,
+                        "percent_change_90d": 0.0,
+                        "last_updated": "2024-01-01T00:00:00.000Z",
+                    }
+                },
+            },
+            "ETH": {
+                "id": 2,
+                "name": "Ethereum",
+                "symbol": "ETH",
+                "quote": {
+                    "USD": {
+                        "price": 3000.0,
+                        "volume_24h": 0.0,
+                        "volume_change_24h": 0.0,
+                        "percent_change_1h": 0.0,
+                        "percent_change_24h": 0.0,
+                        "percent_change_7d": 0.0,
+                        "percent_change_30d": 0.0,
+                        "percent_change_60d": 0.0,
+                        "percent_change_90d": 0.0,
+                        "last_updated": "2024-01-01T00:00:00.000Z",
+                    }
+                },
+            },
+        },
+    }
+
+    waybar_crypto = WaybarCrypto(config)
+    output = waybar_crypto.waybar_output(quotes_latest)
+
+    # BTC should use per-coin format, ETH should use global format
+    assert "BTC:50000" in output["text"]  # Per-coin format
+    assert "$3000" in output["text"]  # Global format
+
+
 class TestWaybarCrypto:
     """Tests for the WaybarCrypto."""
 
@@ -430,6 +567,32 @@ class TestWaybarCrypto:
             config["general"]["api_key"] = ""
             _ = WaybarCrypto(config)
 
+    def test_find_coin_data_exact_match(self, waybar_crypto: WaybarCrypto):
+        """Test that exact symbol match works."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        result = waybar_crypto._find_coin_data(data, "BTC")
+        assert result["symbol"] == "BTC"
+
+    def test_find_coin_data_case_insensitive(self, waybar_crypto: WaybarCrypto):
+        """Test case-insensitive lookup when exact match fails."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        result = waybar_crypto._find_coin_data(data, "btc")
+        assert result["symbol"] == "BTC"
+
+    def test_find_coin_data_mixed_case(self, waybar_crypto: WaybarCrypto):
+        """Test mixed case symbols like XAUt (Tether Gold)."""
+        data = {"XAUt": {"id": 5176, "name": "Tether Gold", "symbol": "XAUt", "quote": {}}}
+        # Should find XAUt when searching for various cases
+        assert waybar_crypto._find_coin_data(data, "XAUt")["symbol"] == "XAUt"
+        assert waybar_crypto._find_coin_data(data, "xaut")["symbol"] == "XAUt"
+        assert waybar_crypto._find_coin_data(data, "XAUT")["symbol"] == "XAUt"
+
+    def test_find_coin_data_not_found(self, waybar_crypto: WaybarCrypto):
+        """Test that missing symbols raise an exception."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        with pytest.raises(WaybarCryptoException):
+            waybar_crypto._find_coin_data(data, "INVALID")
+
 
 @pytest.mark.skipif(API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'")
 @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
@@ -447,3 +610,80 @@ def test_main(capsys):
 def test_main_config_path_invalid():
     with pytest.raises(WaybarCryptoException):
         main()
+
+
+def test_coinmarketcap_api_exception_str():
+    """Test CoinmarketcapApiException string representation."""
+    exc = CoinmarketcapApiException("API rate limit exceeded", error_code=1008)
+    assert str(exc) == "API rate limit exceeded (1008)"
+
+    exc_none = CoinmarketcapApiException("Unknown error", error_code=None)
+    assert str(exc_none) == "Unknown error (None)"
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_connect_timeout(mock_get, config: Config):
+    """Test that ConnectTimeout is properly handled."""
+    import requests.exceptions
+
+    mock_get.side_effect = requests.exceptions.ConnectTimeout()
+
+    waybar_crypto = WaybarCrypto(config)
+    with pytest.raises(WaybarCryptoException) as exc_info:
+        waybar_crypto.coinmarketcap_latest()
+
+    assert "request timed out" in str(exc_info.value)
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
+    """Test that JSONDecodeError is properly handled."""
+    import requests.exceptions
+
+    mock_response = mock.MagicMock()
+    mock_response.json.side_effect = requests.exceptions.JSONDecodeError("", "", 0)
+    mock_get.return_value = mock_response
+
+    waybar_crypto = WaybarCrypto(config)
+    with pytest.raises(WaybarCryptoException) as exc_info:
+        waybar_crypto.coinmarketcap_latest()
+
+    assert "could not parse API response body as JSON" in str(exc_info.value)
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_success(
+    mock_get, config: Config, quotes_latest: ResponseQuotesLatest
+):
+    """Test successful API call with mocked response."""
+    mock_response = mock.MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = quotes_latest
+    mock_get.return_value = mock_response
+
+    waybar_crypto = WaybarCrypto(config)
+    result = waybar_crypto.coinmarketcap_latest()
+
+    assert result == quotes_latest
+    assert "status" in result
+    assert "data" in result
+
+
+@mock.patch("waybar_crypto.requests.get")
+@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
+@mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
+def test_main_success_mocked(mock_get, capsys, quotes_latest: ResponseQuotesLatest):
+    """Test main() happy path with mocked API response."""
+    mock_response = mock.MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = quotes_latest
+    mock_get.return_value = mock_response
+
+    main()
+
+    captured = capsys.readouterr()
+    waybar_obj = json.loads(captured.out)
+    assert "text" in waybar_obj
+    assert "tooltip" in waybar_obj
+    assert "class" in waybar_obj
+    assert waybar_obj["class"] == CLASS_NAME
