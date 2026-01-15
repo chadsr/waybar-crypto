@@ -652,7 +652,9 @@ def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
 
 
 @mock.patch("waybar_crypto.requests.get")
-def test_coinmarketcap_latest_success(mock_get, config: Config, quotes_latest: ResponseQuotesLatest):
+def test_coinmarketcap_latest_success(
+    mock_get, config: Config, quotes_latest: ResponseQuotesLatest
+):
     """Test successful API call with mocked response."""
     mock_response = mock.MagicMock()
     mock_response.status_code = 200
