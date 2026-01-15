@@ -247,7 +247,7 @@ def test_read_config():
     coins = config["coins"]
     assert isinstance(coins, dict)
     for coin_symbol, coin_config in coins.items():
-        assert coin_symbol.isupper() is True
+        assert isinstance(coin_symbol, str) and len(coin_symbol) > 0
         assert isinstance(coin_config, dict)
         assert "icon" in coin_config
         assert isinstance(coin_config["icon"], str)
@@ -411,11 +411,11 @@ icon = ETH
         config = read_config(f.name)
         os.unlink(f.name)
 
-    # BTC should have custom format (keys are uppercased by read_config)
-    assert "display_options_format" in config["coins"]["BTC"]
-    assert config["coins"]["BTC"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
+    # BTC should have custom format (keys preserve original case from config)
+    assert "display_options_format" in config["coins"]["btc"]
+    assert config["coins"]["btc"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
     # ETH should not have custom format
-    assert "display_options_format" not in config["coins"]["ETH"]
+    assert "display_options_format" not in config["coins"]["eth"]
 
 
 def test_waybar_output_with_custom_format():
@@ -566,6 +566,32 @@ class TestWaybarCrypto:
         with pytest.raises(NoApiKeyException):
             config["general"]["api_key"] = ""
             _ = WaybarCrypto(config)
+
+    def test_find_coin_data_exact_match(self, waybar_crypto: WaybarCrypto):
+        """Test that exact symbol match works."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        result = waybar_crypto._find_coin_data(data, "BTC")
+        assert result["symbol"] == "BTC"
+
+    def test_find_coin_data_case_insensitive(self, waybar_crypto: WaybarCrypto):
+        """Test case-insensitive lookup when exact match fails."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        result = waybar_crypto._find_coin_data(data, "btc")
+        assert result["symbol"] == "BTC"
+
+    def test_find_coin_data_mixed_case(self, waybar_crypto: WaybarCrypto):
+        """Test mixed case symbols like XAUt (Tether Gold)."""
+        data = {"XAUt": {"id": 5176, "name": "Tether Gold", "symbol": "XAUt", "quote": {}}}
+        # Should find XAUt when searching for various cases
+        assert waybar_crypto._find_coin_data(data, "XAUt")["symbol"] == "XAUt"
+        assert waybar_crypto._find_coin_data(data, "xaut")["symbol"] == "XAUt"
+        assert waybar_crypto._find_coin_data(data, "XAUT")["symbol"] == "XAUt"
+
+    def test_find_coin_data_not_found(self, waybar_crypto: WaybarCrypto):
+        """Test that missing symbols raise an exception."""
+        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        with pytest.raises(WaybarCryptoException):
+            waybar_crypto._find_coin_data(data, "INVALID")
 
 
 @pytest.mark.skipif(API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'")

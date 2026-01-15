@@ -151,6 +151,7 @@ def read_config(config_path: str) -> Config:
     """
 
     cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+    cfp.optionxform = str  # Preserve case for section names and options
 
     try:
         with open(config_path, "r", encoding="utf-8") as f:
@@ -164,7 +165,7 @@ def read_config(config_path: str) -> Config:
     # Construct the coin configuration dict
     coins: dict[str, ConfigCoin] = {}
     for coin_name in coin_names:
-        coin_symbol = coin_name.upper()
+        coin_symbol = coin_name  # Preserve original case for API compatibility
         display_in_tooltip = DEFAULT_COIN_CONFIG_TOOLTIP
         if "in_tooltip" in cfp[coin_name]:
             display_in_tooltip = cfp.getboolean(coin_name, "in_tooltip")
@@ -264,11 +265,42 @@ class WaybarCrypto(object):
 
         self.config: Config = config
 
+    def _find_coin_data(
+        self, data: dict[str, QuoteData], symbol: str
+    ) -> QuoteData:
+        """Find coin data with case-insensitive symbol matching.
+
+        The CoinMarketCap API may return data keyed by a symbol with different
+        casing than what was requested (e.g., 'XAUt' vs 'XAUT'). This method
+        handles such cases by performing a case-insensitive lookup.
+
+        Args:
+            data: The API response data dict keyed by symbol
+            symbol: The symbol to look up
+
+        Returns:
+            The QuoteData for the matching symbol
+
+        Raises:
+            WaybarCryptoException: If the symbol is not found in the response
+        """
+        # Try exact match first (most common case)
+        if symbol in data:
+            return data[symbol]
+
+        # Fallback to case-insensitive match
+        symbol_lower = symbol.lower()
+        for key, value in data.items():
+            if key.lower() == symbol_lower:
+                return value
+
+        raise WaybarCryptoException(f"symbol '{symbol}' not found in API response")
+
     def coinmarketcap_latest(self) -> ResponseQuotesLatest:
         # Construct API query parameters
         params = {
             "convert": self.config["general"]["currency"].upper(),
-            "symbol": ",".join(coin.upper() for coin in self.config["coins"]),
+            "symbol": ",".join(self.config["coins"]),  # Preserve original case
         }
 
         # Add the API key as the expected header field
@@ -327,7 +359,8 @@ class WaybarCrypto(object):
             change_precision = coin_config["change_precision"]
 
             # Extract the object relevant to our coin/currency pair
-            pair_info = quotes_latest["data"][coin_name.upper()]["quote"][currency]
+            coin_data = self._find_coin_data(quotes_latest["data"], coin_name)
+            pair_info = coin_data["quote"][currency]
 
             output = f"{icon}"
 
