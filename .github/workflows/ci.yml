@@ -33,7 +33,7 @@ jobs:
         with:
           extra-args: "--all-files"
       - name: Bandit
-        run: bandit -c pyproject.toml -r ./waybar_crypto
+        run: uv run bandit -c pyproject.toml -r ./waybar_crypto
   test:
     name: Tests
     needs: lint
@@ -51,7 +51,7 @@ jobs:
       - name: Run Pytest
         env:
           TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
-        run: pytest -vv --cov=waybar_crypto --cov-report=xml tests/
+        run: uv run pytest -vv --cov=waybar_crypto --cov-report=xml tests/
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
