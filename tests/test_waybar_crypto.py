@@ -610,3 +610,78 @@ def test_main(capsys):
 def test_main_config_path_invalid():
     with pytest.raises(WaybarCryptoException):
         main()
+
+
+def test_coinmarketcap_api_exception_str():
+    """Test CoinmarketcapApiException string representation."""
+    exc = CoinmarketcapApiException("API rate limit exceeded", error_code=1008)
+    assert str(exc) == "API rate limit exceeded (1008)"
+
+    exc_none = CoinmarketcapApiException("Unknown error", error_code=None)
+    assert str(exc_none) == "Unknown error (None)"
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_connect_timeout(mock_get, config: Config):
+    """Test that ConnectTimeout is properly handled."""
+    import requests.exceptions
+
+    mock_get.side_effect = requests.exceptions.ConnectTimeout()
+
+    waybar_crypto = WaybarCrypto(config)
+    with pytest.raises(WaybarCryptoException) as exc_info:
+        waybar_crypto.coinmarketcap_latest()
+
+    assert "request timed out" in str(exc_info.value)
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
+    """Test that JSONDecodeError is properly handled."""
+    import requests.exceptions
+
+    mock_response = mock.MagicMock()
+    mock_response.json.side_effect = requests.exceptions.JSONDecodeError("", "", 0)
+    mock_get.return_value = mock_response
+
+    waybar_crypto = WaybarCrypto(config)
+    with pytest.raises(WaybarCryptoException) as exc_info:
+        waybar_crypto.coinmarketcap_latest()
+
+    assert "could not parse API response body as JSON" in str(exc_info.value)
+
+
+@mock.patch("waybar_crypto.requests.get")
+def test_coinmarketcap_latest_success(mock_get, config: Config, quotes_latest: ResponseQuotesLatest):
+    """Test successful API call with mocked response."""
+    mock_response = mock.MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = quotes_latest
+    mock_get.return_value = mock_response
+
+    waybar_crypto = WaybarCrypto(config)
+    result = waybar_crypto.coinmarketcap_latest()
+
+    assert result == quotes_latest
+    assert "status" in result
+    assert "data" in result
+
+
+@mock.patch("waybar_crypto.requests.get")
+@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
+@mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
+def test_main_success_mocked(mock_get, capsys, quotes_latest: ResponseQuotesLatest):
+    """Test main() happy path with mocked API response."""
+    mock_response = mock.MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = quotes_latest
+    mock_get.return_value = mock_response
+
+    main()
+
+    captured = capsys.readouterr()
+    waybar_obj = json.loads(captured.out)
+    assert "text" in waybar_obj
+    assert "tooltip" in waybar_obj
+    assert "class" in waybar_obj
+    assert waybar_obj["class"] == CLASS_NAME
