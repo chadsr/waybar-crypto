@@ -1,37 +1,38 @@
-import os
-import tempfile
 import argparse
-import pytest
-from unittest import mock
-import logging
 import configparser
 import json
+import logging
+import os
+import tempfile
+from unittest import mock
 
-from waybar_crypto import (
-    API_KEY_ENV,
-    CLASS_NAME,
-    DEFAULT_DISPLAY_OPTIONS,
-    DEFAULT_DISPLAY_OPTIONS_FORMAT,
+import pytest
+
+from waybar_crypto.__main__ import (
     DEFAULT_XDG_CONFIG_HOME_PATH,
-    MIN_PRECISION,
     XDG_CONFIG_HOME_ENV,
-    CoinmarketcapApiException,
-    Config,
-    NoApiKeyException,
-    ResponseQuotesLatest,
-    WaybarCrypto,
-    WaybarCryptoException,
     main,
     parse_args,
+)
+from waybar_crypto.config import (
+    API_KEY_ENV,
+    DEFAULT_DISPLAY_OPTIONS,
+    DEFAULT_DISPLAY_OPTIONS_FORMAT,
+    MIN_PRECISION,
+    Config,
     read_config,
 )
+from waybar_crypto.exceptions import (
+    CoinmarketcapApiException,
+    NoApiKeyException,
+    WaybarCryptoException,
+)
+from waybar_crypto.waybar_crypto import CLASS_NAME, ResponseQuotesLatest, WaybarCrypto
 
 LOGGER = logging.getLogger(__name__)
 
 TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
-API_KEY = os.getenv(TEST_API_KEY_ENV)
-if API_KEY == "":
-    API_KEY = None
+API_KEY: str | None = os.getenv(TEST_API_KEY_ENV)
 if API_KEY is None:
     LOGGER.warning("No test API key provided. Skipping API tests")
 
@@ -621,7 +622,7 @@ def test_coinmarketcap_api_exception_str():
     assert str(exc_none) == "Unknown error (None)"
 
 
-@mock.patch("waybar_crypto.requests.get")
+@mock.patch("waybar_crypto.waybar_crypto.requests.get")
 def test_coinmarketcap_latest_connect_timeout(mock_get, config: Config):
     """Test that ConnectTimeout is properly handled."""
     import requests.exceptions
@@ -635,7 +636,7 @@ def test_coinmarketcap_latest_connect_timeout(mock_get, config: Config):
     assert "request timed out" in str(exc_info.value)
 
 
-@mock.patch("waybar_crypto.requests.get")
+@mock.patch("waybar_crypto.waybar_crypto.requests.get")
 def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
     """Test that JSONDecodeError is properly handled."""
     import requests.exceptions
@@ -651,7 +652,7 @@ def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
     assert "could not parse API response body as JSON" in str(exc_info.value)
 
 
-@mock.patch("waybar_crypto.requests.get")
+@mock.patch("waybar_crypto.waybar_crypto.requests.get")
 def test_coinmarketcap_latest_success(
     mock_get, config: Config, quotes_latest: ResponseQuotesLatest
 ):
@@ -669,7 +670,7 @@ def test_coinmarketcap_latest_success(
     assert "data" in result
 
 
-@mock.patch("waybar_crypto.requests.get")
+@mock.patch("waybar_crypto.waybar_crypto.requests.get")
 @mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
 @mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
 def test_main_success_mocked(mock_get, capsys, quotes_latest: ResponseQuotesLatest):
