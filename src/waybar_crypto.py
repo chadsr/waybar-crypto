@@ -245,9 +245,7 @@ class WaybarCrypto(object):
 
         self.config: Config = config
 
-    def _find_coin_data(
-        self, data: dict[str, QuoteData], symbol: str
-    ) -> QuoteData:
+    def _find_coin_data(self, data: dict[str, QuoteData], symbol: str) -> QuoteData:
         """Find coin data with case-insensitive symbol matching.
 
         The CoinMarketCap API may return data keyed by a symbol with different
