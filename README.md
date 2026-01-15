@@ -1,12 +1,12 @@
 # waybar-crypto
 
-[![Tests](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml/badge.svg)](https://github.com/chadsr/waybar-crypto/actions/workflows/test.yml)
+[![CI](https://github.com/chadsr/waybar-crypto/actions/workflows/ci.yml/badge.svg)](https://github.com/chadsr/waybar-crypto/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/chadsr/waybar-crypto/graph/badge.svg?token=DBLYX5C0ST)](https://codecov.io/gh/chadsr/waybar-crypto)
 ![AUR Version](https://img.shields.io/aur/version/waybar-crypto)
 
 A [Waybar](https://github.com/Alexays/Waybar) module for displaying cryptocurrency market information, utilising the [CoinMarketCap API](https://coinmarketcap.com/api/documentation/v1/).
 
-![Example Setup](https://raw.githubusercontent.com/chadsr/waybar-crypto/master/images/waybar_crypto.png)
+![Example Setup](.github/images/waybar_crypto.png)
 
 ## Requirements
 
@@ -47,7 +47,6 @@ fc-cache -f
 Create a configuration file at `$XDG_CONFIG_HOME/waybar-crypto/config.ini` (This location can be customised with the `--config-path` flag). The module **will not** run without first creating this configuration file.
 
 An example can be found in [`config.ini.example`](./config.ini.example) with further options described below in the [Configuration](#configuration) section.
-
 
 ### Update Waybar Configuration
 
