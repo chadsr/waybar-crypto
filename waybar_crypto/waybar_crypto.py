@@ -1,54 +1,19 @@
-from typing import TypedDict
-
+from typing import cast
 import requests
+from collections.abc import Mapping
 
-from .config import DEFAULT_PRECISION, Config
+from .config import DEFAULT_PRECISION, DEFAULT_DISPLAY_OPTIONS_FORMAT, Config
 from .exceptions import CoinmarketcapApiException, NoApiKeyException, WaybarCryptoException
+from .models import (
+    ResponseQuotesLatest,
+    WaybarOutput,
+    QuoteData,
+)
 
 API_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
-
-CLASS_NAME = "crypto"
 TIMEOUT_SECONDS = 10
 
-
-WaybarOutput = TypedDict("WaybarOutput", {"text": str, "tooltip": str, "class": str})
-
-
-class QuoteEntry(TypedDict):
-    price: float
-    volume_24h: float
-    volume_change_24h: float
-    percent_change_1h: float
-    percent_change_24h: float
-    percent_change_7d: float
-    percent_change_30d: float
-    percent_change_60d: float
-    percent_change_90d: float
-    last_updated: str
-
-
-class QuoteData(TypedDict):
-    """Quote data returned by the Coinmarketcap API"""
-
-    id: int
-    name: str
-    symbol: str
-    quote: dict[str, QuoteEntry]
-
-
-class ResponseStatus(TypedDict):
-    timestamp: str
-    error_code: int
-    error_message: str
-    elapsed: int
-    credit_count: int
-
-
-class ResponseQuotesLatest(TypedDict):
-    """Latest quotes response returns by the Coinmarketcap API"""
-
-    status: ResponseStatus
-    data: dict[str, QuoteData]
+WAYBAR_CLASS_NAME = "crypto"
 
 
 class WaybarCrypto(object):
@@ -58,7 +23,7 @@ class WaybarCrypto(object):
 
         self.config: Config = config
 
-    def _find_coin_data(self, data: dict[str, QuoteData], symbol: str) -> QuoteData:
+    def _find_coin_data(self, data: Mapping[str, QuoteData], symbol: str) -> QuoteData:
         """Find coin data with case-insensitive symbol matching.
 
         The CoinMarketCap API may return data keyed by a symbol with different
@@ -109,7 +74,9 @@ class WaybarCrypto(object):
             raise WaybarCryptoException("request timed out")
 
         try:
-            response_quotes_latest: ResponseQuotesLatest = response.json()
+            response_quotes_latest: ResponseQuotesLatest = cast(
+                ResponseQuotesLatest, response.json()
+            )
         except requests.exceptions.JSONDecodeError:
             raise WaybarCryptoException("could not parse API response body as JSON")
 
@@ -129,8 +96,10 @@ class WaybarCrypto(object):
 
     def waybar_output(self, quotes_latest: ResponseQuotesLatest) -> WaybarOutput:
         currency = self.config["general"]["currency"]
+        currency_symbol = self.config["general"]["currency_symbol"]
         display_options = self.config["general"]["display_options"]
-        display_options_format = self.config["general"]["display_options_format"]
+        # Global overrides may be absent or empty; merge with defaults at render time
+        global_overrides = dict(self.config["general"].get("display_options_format", {}))
         spacer = self.config["general"]["spacer_symbol"]
         if spacer != "":
             spacer = f" {spacer}"
@@ -138,25 +107,31 @@ class WaybarCrypto(object):
         output_obj: WaybarOutput = {
             "text": "",
             "tooltip": "",
-            "class": CLASS_NAME,
+            "class": WAYBAR_CLASS_NAME,
         }
 
         # For each coin, populate our output_obj
         # with a string according to the display_options
         for coin_name, coin_config in self.config["coins"].items():
             icon = coin_config["icon"]
+
             price_precision = coin_config["price_precision"]
             volume_precision = coin_config["volume_precision"]
             change_precision = coin_config["change_precision"]
 
-            # Extract the object relevant to our coin/currency pair
             coin_data = self._find_coin_data(quotes_latest["data"], coin_name)
             pair_info = coin_data["quote"][currency]
 
             output = f"{icon}"
 
-            # Get per-coin format overrides if available
-            coin_format_overrides = coin_config.get("display_options_format", {})
+            # Build merged format map: defaults -> add currency symbol -> global overrides -> per-coin overrides
+            merged_format = DEFAULT_DISPLAY_OPTIONS_FORMAT.copy()
+            merged_format["price"] = f"{currency_symbol}{merged_format['price']}"
+            for k, v in global_overrides.items():
+                merged_format[k] = v
+            coin_format_overrides = dict(coin_config.get("display_options_format", {}))
+            for k, v in coin_format_overrides.items():
+                merged_format[k] = v
 
             for display_option in display_options:
                 precision = DEFAULT_PRECISION
@@ -168,13 +143,10 @@ class WaybarCrypto(object):
                     precision = price_precision
 
                 value = round(pair_info[display_option], precision)
-                # Use per-coin format if available, otherwise use global format
-                format_str = coin_format_overrides.get(
-                    display_option, display_options_format[display_option]
-                )
+                format_str = merged_format[display_option]
                 output += f" {format_str}".format(dp=precision, val=value)
 
-            if coin_config["in_tooltip"]:
+            if coin_config.get("in_tooltip", False):
                 if output_obj["tooltip"] != "":
                     output = f"\n{output}"
                 output_obj["tooltip"] += output

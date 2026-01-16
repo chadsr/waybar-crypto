@@ -27,7 +27,8 @@ from waybar_crypto.exceptions import (
     NoApiKeyException,
     WaybarCryptoException,
 )
-from waybar_crypto.waybar_crypto import CLASS_NAME, ResponseQuotesLatest, WaybarCrypto
+from waybar_crypto.waybar_crypto import CLASS_NAME, WaybarCrypto
+from waybar_crypto.models import ResponseQuotesLatest
 
 LOGGER = logging.getLogger(__name__)
 

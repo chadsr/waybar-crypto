@@ -1,7 +1,7 @@
-import argparse
 import json
 import os
 import sys
+from argparse import ArgumentParser, Namespace
 from typing import TypedDict
 
 from . import __VERSION__
@@ -20,9 +20,9 @@ class Args(TypedDict):
 
 
 def parse_args() -> Args:
-    parser = argparse.ArgumentParser()
+    parser: ArgumentParser = ArgumentParser()
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -36,32 +36,33 @@ def parse_args() -> Args:
         xdg_config_home_path = DEFAULT_XDG_CONFIG_HOME_PATH
 
     default_config_path = os.path.join(xdg_config_home_path, CONFIG_DIR, CONFIG_FILE)
-    parser.add_argument(
+    _ = parser.add_argument(
         "-c",
         "--config-path",
         type=str,
         default=default_config_path,
         help=f"Path to the configuration file (default: '{default_config_path}')",
     )
-    args = parser.parse_args()
 
-    return {"config_path": args.config_path}
+    parsed_ns: Namespace = parser.parse_args()
+    args: Args = Args(**vars(parsed_ns))  # pyright: ignore[reportAny]
+
+    return args
 
 
 def main():
-    args = parse_args()
+    args: Args = parse_args()
+    abs_config_path = os.path.expanduser(args["config_path"])  # expand ~ if present
+    if not os.path.isfile(abs_config_path):
+        raise WaybarCryptoException(f"configuration file not found at '{abs_config_path}'")
 
-    config_path = os.path.expanduser(args["config_path"])
-    if not os.path.isfile(config_path):
-        raise WaybarCryptoException(f"configuration file not found at '{config_path}'")
-
-    config = read_config(config_path)
+    config = read_config(abs_config_path)
     waybar_crypto = WaybarCrypto(config)
     quotes_latest = waybar_crypto.coinmarketcap_latest()
     output = waybar_crypto.waybar_output(quotes_latest)
 
     # Write the output dict as a json string to stdout
-    sys.stdout.write(json.dumps(output))
+    _ = sys.stdout.write(json.dumps(output))
 
 
 if __name__ == "__main__":
