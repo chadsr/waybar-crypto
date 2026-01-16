@@ -4,7 +4,7 @@ description = "A Waybar module for displaying cryptocurrency market information 
 readme = "README.md"
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = ["requests"]
 dynamic = ["version"]
 
@@ -30,11 +30,6 @@ distance = "{next_version}.dev{distance}+{vcs}{rev}"
 dirty = "{version}+dirty"
 distance-dirty = "{next_version}.dev{distance}+{vcs}{rev}.dirty"
 
-[tool.hatch.build.hooks.versioningit-onbuild]
-source-file = "waybar_crypto/__init__.py"
-build-file = "waybar_crypto/__init__.py"
-replacement = '"{next_version}"'
-
 [tool.hatch.build.targets.wheel]
 packages = ["waybar_crypto"]
 
@@ -49,9 +44,7 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-markers = [
-    "integration: tests that require a real API key and network access",
-]
+markers = ["integration: tests that require a real API key and network access"]
 
 [build-system]
 requires = ["hatchling", "versioningit"]
