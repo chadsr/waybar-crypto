@@ -4,7 +4,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from typing import TypedDict
 
-from . import __VERSION__
+from . import __version__
 from .config import read_config
 from .exceptions import WaybarCryptoException
 from .waybar_crypto import WaybarCrypto
@@ -26,7 +26,7 @@ def parse_args() -> Args:
         "-v",
         "--version",
         action="version",
-        version=__VERSION__,
+        version=__version__,
         help="Show version and exit",
     )
 
