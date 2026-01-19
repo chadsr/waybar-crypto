@@ -4,6 +4,7 @@ import configparser
 import json
 import logging
 import os
+import runpy
 import tempfile
 from unittest import mock
 import pytest
@@ -707,6 +708,28 @@ class TestMainEntrypoint:
         assert "tooltip" in waybar_obj
         assert "class" in waybar_obj
         assert waybar_obj["class"] == WAYBAR_CLASS_NAME
+
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    @mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
+    def test_dunder_main_invokes_main(self, mock_get, capsys, quotes_latest: ResponseQuotesLatest):
+        """Ensure that running the module as __main__ triggers main()"""
+
+        # Mock successful API response
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = quotes_latest
+        mock_get.return_value = mock_response
+
+        # Provide CLI args so parse_args() succeeds
+        with mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"]):
+            # Execute the module as if run with `python -m waybar_crypto`
+            runpy.run_module("waybar_crypto.__main__", run_name="__main__", alter_sys=True)
+
+        captured = capsys.readouterr()
+        waybar_obj = json.loads(captured.out)
+        assert "text" in waybar_obj
+        assert "tooltip" in waybar_obj
+        assert "class" in waybar_obj
 
 
 # -----------------------------
