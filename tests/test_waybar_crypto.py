@@ -1,6 +1,8 @@
 import argparse
 from collections.abc import Mapping
 import configparser
+import importlib
+from importlib.metadata import PackageNotFoundError
 import json
 import logging
 import os
@@ -8,6 +10,7 @@ import runpy
 import tempfile
 from unittest import mock
 import pytest
+import requests
 
 from waybar_crypto import WAYBAR_CLASS_NAME, WaybarCrypto
 from waybar_crypto.__main__ import (
@@ -624,7 +627,6 @@ class TestWaybarCryptoApi:
     @mock.patch("waybar_crypto.waybar_crypto.requests.get")
     def test_coinmarketcap_latest_connect_timeout(self, mock_get, config: Config):
         """Test that ConnectTimeout is properly handled."""
-        import requests.exceptions
 
         mock_get.side_effect = requests.exceptions.ConnectTimeout()
 
@@ -637,7 +639,6 @@ class TestWaybarCryptoApi:
     @mock.patch("waybar_crypto.waybar_crypto.requests.get")
     def test_coinmarketcap_latest_json_decode_error(self, mock_get, config: Config):
         """Test that JSONDecodeError is properly handled."""
-        import requests.exceptions
 
         mock_response = mock.MagicMock()
         mock_response.json.side_effect = requests.exceptions.JSONDecodeError("", "", 0)
@@ -746,8 +747,6 @@ class TestExceptions:
 
     def test_version_fallback_when_pkg_not_installed(self):
         """Test that a default version is given when no package version is found (PackageNotFoundError)."""
-        import importlib
-        from importlib.metadata import PackageNotFoundError
 
         # Keep a reference to the loaded package to restore afterwards
         import waybar_crypto as pkg
