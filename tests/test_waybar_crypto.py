@@ -1,44 +1,56 @@
-import os
-import tempfile
 import argparse
-import pytest
-from unittest import mock
-import logging
+from collections.abc import Mapping
 import configparser
+import importlib
+from importlib.metadata import PackageNotFoundError
 import json
+import logging
+import os
+import runpy
+import tempfile
+from unittest import mock
+import pytest
+import requests
 
-from waybar_crypto import (
-    API_KEY_ENV,
-    CLASS_NAME,
-    DEFAULT_DISPLAY_OPTIONS,
-    DEFAULT_DISPLAY_OPTIONS_FORMAT,
+from waybar_crypto import WAYBAR_CLASS_NAME, WaybarCrypto
+from waybar_crypto.__main__ import (
     DEFAULT_XDG_CONFIG_HOME_PATH,
-    MIN_PRECISION,
     XDG_CONFIG_HOME_ENV,
-    CoinmarketcapApiException,
-    Config,
-    NoApiKeyException,
-    ResponseQuotesLatest,
-    WaybarCrypto,
-    WaybarCryptoException,
     main,
     parse_args,
+)
+from waybar_crypto.config import (
+    API_KEY_ENV,
+    DEFAULT_DISPLAY_OPTIONS,
+    DEFAULT_DISPLAY_OPTIONS_FORMAT,
+    MIN_PRECISION,
+    Config,
     read_config,
 )
+from waybar_crypto.exceptions import (
+    CoinmarketcapApiException,
+    NoApiKeyException,
+    WaybarCryptoException,
+)
+from waybar_crypto.models import QuoteData, ResponseQuotesLatest
 
 LOGGER = logging.getLogger(__name__)
 
 TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
-API_KEY = os.getenv(TEST_API_KEY_ENV)
-if API_KEY == "":
-    API_KEY = None
+API_KEY: str | None = os.getenv(TEST_API_KEY_ENV)
 if API_KEY is None:
     LOGGER.warning("No test API key provided. Skipping API tests")
 
 TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
 
+# Name shown in sys.argv[0] for CLI tests; matches console script in pyproject.toml
+CLI_PROG = "waybar-crypto"
 
+
+# -----------------------------
+# Shared fixtures
+# -----------------------------
 @pytest.fixture()
 def config() -> Config:
     return {
@@ -189,190 +201,187 @@ def quotes_latest() -> ResponseQuotesLatest:
     }
 
 
-@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: ""})
-def test_parse_args_default_path():
-    with mock.patch("sys.argv", ["waybar_crypto.py"]):
+# -----------------------------
+# Argument parsing tests
+# -----------------------------
+class TestArgParsing:
+    @mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: ""})
+    def test_parse_args_default_path(self):
+        with mock.patch("sys.argv", [CLI_PROG]):
+            args = parse_args()
+            assert "config_path" in args
+            assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
+                args["config_path"]
+            )
+
+    @mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: TEST_CONFIG_PATH})
+    def test_parse_args_custom_xdg_data_home(self):
+        with mock.patch("sys.argv", [CLI_PROG]):
+            args = parse_args()
+            assert "config_path" in args
+            assert TEST_CONFIG_PATH in args["config_path"]
+
+    @mock.patch(
+        "argparse.ArgumentParser.parse_args",
+        return_value=argparse.Namespace(config_path=TEST_CONFIG_PATH),
+    )
+    def test_parse_args_custom_path(self, mock_parse: mock.MagicMock):  # pyright: ignore[reportUnusedParameter]
         args = parse_args()
         assert "config_path" in args
-        assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
-            args["config_path"]
-        )
+        assert args["config_path"] == TEST_CONFIG_PATH
 
 
-@mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: TEST_CONFIG_PATH})
-def test_parse_args_custom_xdg_data_home():
-    with mock.patch("sys.argv", ["waybar_crypto.py"]):
-        args = parse_args()
-        assert "config_path" in args
-        assert TEST_CONFIG_PATH in args["config_path"]
+# -----------------------------
+# Config loading and validation tests
+# -----------------------------
+class TestConfigLoading:
+    @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
+    def test_read_config(self):
+        config = read_config(TEST_CONFIG_PATH)
+        assert "general" in config
+        general = config["general"]
+        assert isinstance(general, dict)
 
+        assert "currency" in general
+        assert isinstance(general["currency"], str)
+        assert general["currency"].isupper() is True
 
-@mock.patch(
-    "argparse.ArgumentParser.parse_args",
-    return_value=argparse.Namespace(config_path=TEST_CONFIG_PATH),
-)
-def test_parse_args_custom_path(mock: mock.MagicMock):
-    args = parse_args()
-    assert "config_path" in args
-    assert args["config_path"] == TEST_CONFIG_PATH
+        assert "currency_symbol" in general
+        assert isinstance(general["currency_symbol"], str)
 
+        assert "spacer_symbol" in general
+        assert isinstance(general["spacer_symbol"], str)
 
-@mock.patch.dict(os.environ, {API_KEY_ENV: ""})
-def test_read_config():
-    config = read_config(TEST_CONFIG_PATH)
-    assert "general" in config
-    general = config["general"]
-    assert isinstance(general, dict)
+        assert "display_options" in general
+        assert isinstance(general["display_options"], list)
 
-    assert "currency" in general
-    assert isinstance(general["currency"], str)
-    assert general["currency"].isupper() is True
+        assert "display_options_format" in general
+        assert isinstance(general["display_options_format"], dict)
 
-    assert "currency_symbol" in general
-    assert isinstance(general["currency_symbol"], str)
+        assert "api_key" in general
+        assert isinstance(general["api_key"], str)
 
-    assert "spacer_symbol" in general
-    assert isinstance(general["spacer_symbol"], str)
+        assert "coins" in config
+        coins = config["coins"]
+        assert isinstance(coins, dict)
+        for coin_symbol, coin_config in coins.items():
+            assert isinstance(coin_symbol, str) and len(coin_symbol) > 0
+            assert isinstance(coin_config, dict)
+            assert "icon" in coin_config
+            assert isinstance(coin_config["icon"], str)
+            assert "in_tooltip" in coin_config
+            assert isinstance(coin_config["in_tooltip"], bool)
+            assert "price_precision" in coin_config
+            assert isinstance(coin_config["price_precision"], int)
+            assert "change_precision" in coin_config
+            assert isinstance(coin_config["change_precision"], int)
+            assert "volume_precision" in coin_config
+            assert isinstance(coin_config["volume_precision"], int)
 
-    assert "display_options" in general
-    assert isinstance(general["display_options"], list)
+    @mock.patch.dict(os.environ, {API_KEY_ENV: TEST_API_KEY})
+    def test_read_config_env(self):
+        config = read_config(TEST_CONFIG_PATH)
+        assert config["general"]["api_key"] == TEST_API_KEY
 
-    assert "display_options_format" in general
-    assert isinstance(general["display_options_format"], dict)
+    def test_read_config_min_precision(self):
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("btc", "price_precision", str(MIN_PRECISION - 1))
 
-    assert "api_key" in general
-    assert isinstance(general["api_key"], str)
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
-    assert "coins" in config
-    coins = config["coins"]
-    assert isinstance(coins, dict)
-    for coin_symbol, coin_config in coins.items():
-        assert isinstance(coin_symbol, str) and len(coin_symbol) > 0
-        assert isinstance(coin_config, dict)
-        assert "icon" in coin_config
-        assert isinstance(coin_config["icon"], str)
-        assert "in_tooltip" in coin_config
-        assert isinstance(coin_config["in_tooltip"], bool)
-        assert "price_precision" in coin_config
-        assert isinstance(coin_config["price_precision"], int)
-        assert "change_precision" in coin_config
-        assert isinstance(coin_config["change_precision"], int)
-        assert "volume_precision" in coin_config
-        assert isinstance(coin_config["volume_precision"], int)
+                with pytest.raises(WaybarCryptoException):
+                    _ = read_config(tmp_config_path)
 
+    def test_read_config_display_options_single(self):
+        test_display_option = "price"
 
-@mock.patch.dict(os.environ, {API_KEY_ENV: TEST_API_KEY})
-def test_read_config_env():
-    config = read_config(TEST_CONFIG_PATH)
-    assert config["general"]["api_key"] == TEST_API_KEY
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("general", "display", test_display_option)
 
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
-def test_read_config_min_precision():
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("btc", "price_precision", str(MIN_PRECISION - 1))
+                config = read_config(tmp_config_path)
+                display_options = config["general"]["display_options"]
+                assert display_options == [test_display_option]
 
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
+    def test_read_config_display_options_multiple(self):
+        test_display_options = ["price", "percent_change_1h", "percent_change_24h"]
 
-            with pytest.raises(WaybarCryptoException):
-                _ = read_config(tmp_config_path)
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("general", "display", ",".join(test_display_options))
 
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
-def test_read_config_display_options_single():
-    test_display_option = "price"
+                config = read_config(tmp_config_path)
+                display_options = config["general"]["display_options"]
+                assert display_options == test_display_options
 
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("general", "display", test_display_option)
+    def test_read_config_default_display_options(self):
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("general", "display", None)
 
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
-            config = read_config(tmp_config_path)
-            display_options = config["general"]["display_options"]
-            assert display_options == [test_display_option]
+                config = read_config(tmp_config_path)
+                display_options = config["general"]["display_options"]
+                assert display_options == DEFAULT_DISPLAY_OPTIONS
 
+    def test_read_config_display_invalid(self):
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("general", "display", "notvalid")
 
-def test_read_config_display_options_multiple():
-    test_display_options = ["price", "percent_change_1h", "percent_change_24h"]
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("general", "display", ",".join(test_display_options))
+                with pytest.raises(WaybarCryptoException):
+                    _ = read_config(tmp_config_path)
 
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
+    def test_read_config_no_api_key(self):
+        with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
+            cfp.read_file(f)
+            cfp.set("general", "api_key", "")
 
-            config = read_config(tmp_config_path)
-            display_options = config["general"]["display_options"]
-            assert display_options == test_display_options
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                cfp.write(tmp)
+                tmp.flush()
+                tmp_config_path = tmp.file.name
 
+                with pytest.raises(NoApiKeyException):
+                    _ = read_config(tmp_config_path)
 
-def test_read_config_default_display_options():
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("general", "display", None)
+    def test_read_config_invalid_path(self):
+        with pytest.raises(WaybarCryptoException):
+            _ = read_config("/invalid/config.ini")
 
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
-
-            config = read_config(tmp_config_path)
-            display_options = config["general"]["display_options"]
-            assert display_options == DEFAULT_DISPLAY_OPTIONS
-
-
-def test_read_config_display_invalid():
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("general", "display", "notvalid")
-
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
-
-            with pytest.raises(WaybarCryptoException):
-                _ = read_config(tmp_config_path)
-
-
-def test_read_config_no_api_key():
-    with open(TEST_CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfp = configparser.ConfigParser(allow_no_value=True, interpolation=None)
-        cfp.read_file(f)
-        cfp.set("general", "api_key", "")
-
-        with tempfile.NamedTemporaryFile(mode="w") as tmp:
-            cfp.write(tmp)
-            tmp.flush()
-            tmp_config_path = tmp.file.name
-
-            with pytest.raises(NoApiKeyException):
-                _ = read_config(tmp_config_path)
-
-
-def test_read_config_invalid_path():
-    with pytest.raises(WaybarCryptoException):
-        _ = read_config("/invalid/config.ini")
-
-
-def test_read_config_global_format_options():
-    """Test that global format options are parsed from [general] section."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
-        f.write("""[general]
+    def test_read_config_global_format_options(self):
+        """Test that global format options are parsed from [general] section."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+            _ = f.write("""[general]
 currency = usd
 currency_symbol = $
 display = price,percent_change_24h
@@ -383,18 +392,19 @@ format_percent_change_24h = ({val:+.{dp}f}%)
 [btc]
 icon = BTC
 """)
-        f.flush()
-        config = read_config(f.name)
-        os.unlink(f.name)
+            f.flush()
+            config = read_config(f.name)
+            os.unlink(f.name)
 
-    assert config["general"]["display_options_format"]["price"] == "${val:.{dp}f} USD"
-    assert config["general"]["display_options_format"]["percent_change_24h"] == "({val:+.{dp}f}%)"
+        assert config["general"]["display_options_format"]["price"] == "${val:.{dp}f} USD"
+        assert (
+            config["general"]["display_options_format"]["percent_change_24h"] == "({val:+.{dp}f}%)"
+        )
 
-
-def test_read_config_per_coin_format_options():
-    """Test that per-coin format options are parsed."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
-        f.write("""[general]
+    def test_read_config_per_coin_format_options(self):
+        """Test that per-coin format options are parsed."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
+            f.write("""[general]
 currency = usd
 currency_symbol = $
 display = price
@@ -407,108 +417,116 @@ format_price = ₿{val:.{dp}f}
 [eth]
 icon = ETH
 """)
-        f.flush()
-        config = read_config(f.name)
-        os.unlink(f.name)
+            f.flush()
+            config = read_config(f.name)
+            os.unlink(f.name)
 
-    # BTC should have custom format (keys preserve original case from config)
-    assert "display_options_format" in config["coins"]["btc"]
-    assert config["coins"]["btc"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
-    # ETH should not have custom format
-    assert "display_options_format" not in config["coins"]["eth"]
+        # BTC should have custom format (keys preserve original case from config)
+        assert "display_options_format" in config["coins"]["btc"]
+        assert config["coins"]["btc"]["display_options_format"]["price"] == "₿{val:.{dp}f}"
+        # ETH should not have custom format
+        assert "display_options_format" not in config["coins"]["eth"]
 
 
-def test_waybar_output_with_custom_format():
-    """Test that custom format strings are used in output."""
-    config: Config = {
-        "general": {
-            "currency": "USD",
-            "currency_symbol": "$",
-            "spacer_symbol": "",
-            "display_options": ["price"],
-            "display_options_format": {"price": "${val:.{dp}f}"},
-            "api_key": "test_key",
-        },
-        "coins": {
-            "BTC": {
-                "icon": "₿",
-                "in_tooltip": False,
-                "price_precision": 0,
-                "change_precision": 2,
-                "volume_precision": 2,
-                "display_options_format": {"price": "BTC:{val:.{dp}f}"},
+# -----------------------------
+# Output formatting tests
+# -----------------------------
+class TestWaybarOutputFormatting:
+    def test_waybar_output_with_custom_format(self):
+        """Test that custom format strings are used in output."""
+        config: Config = {
+            "general": {
+                "currency": "USD",
+                "currency_symbol": "$",
+                "spacer_symbol": "",
+                "display_options": ["price"],
+                "display_options_format": {"price": "${val:.{dp}f}"},
+                "api_key": "test_key",
             },
-            "ETH": {
-                "icon": "Ξ",
-                "in_tooltip": False,
-                "price_precision": 0,
-                "change_precision": 2,
-                "volume_precision": 2,
-            },
-        },
-    }
-
-    quotes_latest: ResponseQuotesLatest = {
-        "status": {
-            "timestamp": "2024-01-01T00:00:00.000Z",
-            "error_code": 0,
-            "error_message": "",
-            "elapsed": 1,
-            "credit_count": 1,
-        },
-        "data": {
-            "BTC": {
-                "id": 1,
-                "name": "Bitcoin",
-                "symbol": "BTC",
-                "quote": {
-                    "USD": {
-                        "price": 50000.0,
-                        "volume_24h": 0.0,
-                        "volume_change_24h": 0.0,
-                        "percent_change_1h": 0.0,
-                        "percent_change_24h": 0.0,
-                        "percent_change_7d": 0.0,
-                        "percent_change_30d": 0.0,
-                        "percent_change_60d": 0.0,
-                        "percent_change_90d": 0.0,
-                        "last_updated": "2024-01-01T00:00:00.000Z",
-                    }
+            "coins": {
+                "BTC": {
+                    "icon": "₿",
+                    "in_tooltip": False,
+                    "price_precision": 0,
+                    "change_precision": 2,
+                    "volume_precision": 2,
+                    "display_options_format": {"price": "BTC:{val:.{dp}f}"},
+                },
+                "ETH": {
+                    "icon": "Ξ",
+                    "in_tooltip": False,
+                    "price_precision": 0,
+                    "change_precision": 2,
+                    "volume_precision": 2,
                 },
             },
-            "ETH": {
-                "id": 2,
-                "name": "Ethereum",
-                "symbol": "ETH",
-                "quote": {
-                    "USD": {
-                        "price": 3000.0,
-                        "volume_24h": 0.0,
-                        "volume_change_24h": 0.0,
-                        "percent_change_1h": 0.0,
-                        "percent_change_24h": 0.0,
-                        "percent_change_7d": 0.0,
-                        "percent_change_30d": 0.0,
-                        "percent_change_60d": 0.0,
-                        "percent_change_90d": 0.0,
-                        "last_updated": "2024-01-01T00:00:00.000Z",
-                    }
+        }
+
+        quotes_latest: ResponseQuotesLatest = {
+            "status": {
+                "timestamp": "2024-01-01T00:00:00.000Z",
+                "error_code": 0,
+                "error_message": "",
+                "elapsed": 1,
+                "credit_count": 1,
+            },
+            "data": {
+                "BTC": {
+                    "id": 1,
+                    "name": "Bitcoin",
+                    "symbol": "BTC",
+                    "quote": {
+                        "USD": {
+                            "price": 50000.0,
+                            "volume_24h": 0.0,
+                            "volume_change_24h": 0.0,
+                            "percent_change_1h": 0.0,
+                            "percent_change_24h": 0.0,
+                            "percent_change_7d": 0.0,
+                            "percent_change_30d": 0.0,
+                            "percent_change_60d": 0.0,
+                            "percent_change_90d": 0.0,
+                            "last_updated": "2024-01-01T00:00:00.000Z",
+                        }
+                    },
+                },
+                "ETH": {
+                    "id": 2,
+                    "name": "Ethereum",
+                    "symbol": "ETH",
+                    "quote": {
+                        "USD": {
+                            "price": 3000.0,
+                            "volume_24h": 0.0,
+                            "volume_change_24h": 0.0,
+                            "percent_change_1h": 0.0,
+                            "percent_change_24h": 0.0,
+                            "percent_change_7d": 0.0,
+                            "percent_change_30d": 0.0,
+                            "percent_change_60d": 0.0,
+                            "percent_change_90d": 0.0,
+                            "last_updated": "2024-01-01T00:00:00.000Z",
+                        }
+                    },
                 },
             },
-        },
-    }
+        }
 
-    waybar_crypto = WaybarCrypto(config)
-    output = waybar_crypto.waybar_output(quotes_latest)
+        waybar_crypto = WaybarCrypto(config)
+        output = waybar_crypto.waybar_output(quotes_latest)
 
-    # BTC should use per-coin format, ETH should use global format
-    assert "BTC:50000" in output["text"]  # Per-coin format
-    assert "$3000" in output["text"]  # Global format
+        # BTC should use per-coin format, ETH should use global format
+        assert "BTC:50000" in output["text"]  # Per-coin format
+        assert "$3000" in output["text"]  # Global format
 
 
-class TestWaybarCrypto:
-    """Tests for the WaybarCrypto."""
+# -----------------------------
+# WaybarCrypto core behavior tests
+# -----------------------------
+class TestWaybarCryptoCore:
+    """Tests for the WaybarCrypto core behaviors and coin lookup."""
 
+    @pytest.mark.integration
     @pytest.mark.skipif(
         API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
     )
@@ -559,7 +577,7 @@ class TestWaybarCrypto:
             assert field in output
             assert isinstance(output[field], str)
 
-        assert output["class"] == CLASS_NAME
+        assert output["class"] == WAYBAR_CLASS_NAME
 
     @mock.patch.dict(os.environ, {API_KEY_ENV: ""})
     def test_no_api_key(self, config: Config):
@@ -569,19 +587,25 @@ class TestWaybarCrypto:
 
     def test_find_coin_data_exact_match(self, waybar_crypto: WaybarCrypto):
         """Test that exact symbol match works."""
-        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        data: Mapping[str, QuoteData] = {
+            "BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}
+        }
         result = waybar_crypto._find_coin_data(data, "BTC")
         assert result["symbol"] == "BTC"
 
     def test_find_coin_data_case_insensitive(self, waybar_crypto: WaybarCrypto):
         """Test case-insensitive lookup when exact match fails."""
-        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        data: Mapping[str, QuoteData] = {
+            "BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}
+        }
         result = waybar_crypto._find_coin_data(data, "btc")
         assert result["symbol"] == "BTC"
 
     def test_find_coin_data_mixed_case(self, waybar_crypto: WaybarCrypto):
         """Test mixed case symbols like XAUt (Tether Gold)."""
-        data = {"XAUt": {"id": 5176, "name": "Tether Gold", "symbol": "XAUt", "quote": {}}}
+        data: Mapping[str, QuoteData] = {
+            "XAUt": {"id": 5176, "name": "Tether Gold", "symbol": "XAUt", "quote": {}}
+        }
         # Should find XAUt when searching for various cases
         assert waybar_crypto._find_coin_data(data, "XAUt")["symbol"] == "XAUt"
         assert waybar_crypto._find_coin_data(data, "xaut")["symbol"] == "XAUt"
@@ -589,101 +613,154 @@ class TestWaybarCrypto:
 
     def test_find_coin_data_not_found(self, waybar_crypto: WaybarCrypto):
         """Test that missing symbols raise an exception."""
-        data = {"BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}}
+        data: Mapping[str, QuoteData] = {
+            "BTC": {"id": 1, "name": "Bitcoin", "symbol": "BTC", "quote": {}}
+        }
         with pytest.raises(WaybarCryptoException):
             waybar_crypto._find_coin_data(data, "INVALID")
 
 
-@pytest.mark.skipif(API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'")
-@mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
-@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
-def test_main(capsys):
-    main()
-    captured = capsys.readouterr()
-    waybar_obj = json.loads(captured.out)
-    assert "text" in waybar_obj
-    assert "tooltip" in waybar_obj
-    assert "class" in waybar_obj
+# -----------------------------
+# WaybarCrypto API interactions (mocked requests)
+# -----------------------------
+class TestWaybarCryptoApi:
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    def test_coinmarketcap_latest_connect_timeout(self, mock_get, config: Config):
+        """Test that ConnectTimeout is properly handled."""
+
+        mock_get.side_effect = requests.exceptions.ConnectTimeout()
+
+        waybar_crypto = WaybarCrypto(config)
+        with pytest.raises(WaybarCryptoException) as exc_info:
+            waybar_crypto.coinmarketcap_latest()
+
+        assert "request timed out" in str(exc_info.value)
+
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    def test_coinmarketcap_latest_json_decode_error(self, mock_get, config: Config):
+        """Test that JSONDecodeError is properly handled."""
+
+        mock_response = mock.MagicMock()
+        mock_response.json.side_effect = requests.exceptions.JSONDecodeError("", "", 0)
+        mock_get.return_value = mock_response
+
+        waybar_crypto = WaybarCrypto(config)
+        with pytest.raises(WaybarCryptoException) as exc_info:
+            waybar_crypto.coinmarketcap_latest()
+
+        assert "could not parse API response body as JSON" in str(exc_info.value)
+
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    def test_coinmarketcap_latest_success(
+        self, mock_get, config: Config, quotes_latest: ResponseQuotesLatest
+    ):
+        """Test successful API call with mocked response."""
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = quotes_latest
+        mock_get.return_value = mock_response
+
+        waybar_crypto = WaybarCrypto(config)
+        result = waybar_crypto.coinmarketcap_latest()
+
+        assert result == quotes_latest
+        assert "status" in result
+        assert "data" in result
 
 
-@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "/invalid/config.ini"])
-def test_main_config_path_invalid():
-    with pytest.raises(WaybarCryptoException):
+# -----------------------------
+# CLI entrypoint tests
+# -----------------------------
+class TestMainEntrypoint:
+    @pytest.mark.integration
+    @pytest.mark.skipif(
+        API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
+    )
+    @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"])
+    def test_main(self, capsys):
+        main()
+        captured = capsys.readouterr()
+        waybar_obj = json.loads(captured.out)
+        assert "text" in waybar_obj
+        assert "tooltip" in waybar_obj
+        assert "class" in waybar_obj
+
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "/invalid/config.ini"])
+    def test_main_config_path_invalid(self):
+        with pytest.raises(WaybarCryptoException):
+            main()
+
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"])
+    @mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
+    def test_main_success_mocked(self, mock_get, capsys, quotes_latest: ResponseQuotesLatest):
+        """Test main() happy path with mocked API response."""
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = quotes_latest
+        mock_get.return_value = mock_response
+
         main()
 
+        captured = capsys.readouterr()
+        waybar_obj = json.loads(captured.out)
+        assert "text" in waybar_obj
+        assert "tooltip" in waybar_obj
+        assert "class" in waybar_obj
+        assert waybar_obj["class"] == WAYBAR_CLASS_NAME
 
-def test_coinmarketcap_api_exception_str():
-    """Test CoinmarketcapApiException string representation."""
-    exc = CoinmarketcapApiException("API rate limit exceeded", error_code=1008)
-    assert str(exc) == "API rate limit exceeded (1008)"
+    @mock.patch("waybar_crypto.waybar_crypto.requests.get")
+    @mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
+    def test_dunder_main_invokes_main(self, mock_get, capsys, quotes_latest: ResponseQuotesLatest):
+        """Ensure that running the module as __main__ triggers main()"""
 
-    exc_none = CoinmarketcapApiException("Unknown error", error_code=None)
-    assert str(exc_none) == "Unknown error (None)"
+        # Mock successful API response
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = quotes_latest
+        mock_get.return_value = mock_response
 
+        # Provide CLI args so parse_args() succeeds
+        with mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"]):
+            # Execute the module as if run with `python -m waybar_crypto`
+            runpy.run_module("waybar_crypto.__main__", run_name="__main__", alter_sys=True)
 
-@mock.patch("waybar_crypto.requests.get")
-def test_coinmarketcap_latest_connect_timeout(mock_get, config: Config):
-    """Test that ConnectTimeout is properly handled."""
-    import requests.exceptions
-
-    mock_get.side_effect = requests.exceptions.ConnectTimeout()
-
-    waybar_crypto = WaybarCrypto(config)
-    with pytest.raises(WaybarCryptoException) as exc_info:
-        waybar_crypto.coinmarketcap_latest()
-
-    assert "request timed out" in str(exc_info.value)
-
-
-@mock.patch("waybar_crypto.requests.get")
-def test_coinmarketcap_latest_json_decode_error(mock_get, config: Config):
-    """Test that JSONDecodeError is properly handled."""
-    import requests.exceptions
-
-    mock_response = mock.MagicMock()
-    mock_response.json.side_effect = requests.exceptions.JSONDecodeError("", "", 0)
-    mock_get.return_value = mock_response
-
-    waybar_crypto = WaybarCrypto(config)
-    with pytest.raises(WaybarCryptoException) as exc_info:
-        waybar_crypto.coinmarketcap_latest()
-
-    assert "could not parse API response body as JSON" in str(exc_info.value)
+        captured = capsys.readouterr()
+        waybar_obj = json.loads(captured.out)
+        assert "text" in waybar_obj
+        assert "tooltip" in waybar_obj
+        assert "class" in waybar_obj
 
 
-@mock.patch("waybar_crypto.requests.get")
-def test_coinmarketcap_latest_success(
-    mock_get, config: Config, quotes_latest: ResponseQuotesLatest
-):
-    """Test successful API call with mocked response."""
-    mock_response = mock.MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = quotes_latest
-    mock_get.return_value = mock_response
+# -----------------------------
+# Exception behavior tests
+# -----------------------------
+class TestExceptions:
+    def test_coinmarketcap_api_exception_str(self):
+        """Test CoinmarketcapApiException string representation."""
+        exc = CoinmarketcapApiException("API rate limit exceeded", error_code=1008)
+        assert str(exc) == "API rate limit exceeded (1008)"
 
-    waybar_crypto = WaybarCrypto(config)
-    result = waybar_crypto.coinmarketcap_latest()
+        exc_none = CoinmarketcapApiException("Unknown error", error_code=None)
+        assert str(exc_none) == "Unknown error (None)"
 
-    assert result == quotes_latest
-    assert "status" in result
-    assert "data" in result
+    def test_version_fallback_when_pkg_not_installed(self):
+        """Test that a default version is given when no package version is found (PackageNotFoundError)."""
 
+        # Keep a reference to the loaded package to restore afterwards
+        import waybar_crypto as pkg
 
-@mock.patch("waybar_crypto.requests.get")
-@mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
-@mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
-def test_main_success_mocked(mock_get, capsys, quotes_latest: ResponseQuotesLatest):
-    """Test main() happy path with mocked API response."""
-    mock_response = mock.MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = quotes_latest
-    mock_get.return_value = mock_response
+        original_version = getattr(pkg, "__version__", None)
 
-    main()
+        # Force importlib.metadata.version to raise PackageNotFoundError during reload
+        with mock.patch("importlib.metadata.version", side_effect=PackageNotFoundError()):
+            reloaded = importlib.reload(pkg)
+            assert reloaded.__version__ == "0.0.0+unknown"
 
-    captured = capsys.readouterr()
-    waybar_obj = json.loads(captured.out)
-    assert "text" in waybar_obj
-    assert "tooltip" in waybar_obj
-    assert "class" in waybar_obj
-    assert waybar_obj["class"] == CLASS_NAME
+        # Reload again without patch to restore the original state for subsequent tests
+        reloaded = importlib.reload(pkg)
+        if original_version is not None:
+            assert (
+                reloaded.__version__ == original_version or reloaded.__version__ == "0.0.0+unknown"
+            )

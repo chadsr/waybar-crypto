@@ -1,34 +1,41 @@
-name: Tests
+name: CI
 on:
   push:
     branches:
       - "master"
     paths:
-      - ".github/workflows/test.yml"
+      - ".github/workflows/ci.yml"
       - "**/*.py"
-      - "poetry.lock"
+      - "uv.lock"
       - "pyproject.toml"
       - "config.ini.example"
   pull_request:
     paths:
-      - ".github/workflows/test.yml"
+      - ".github/workflows/ci.yml"
       - "**/*.py"
-      - "poetry.lock"
+      - "uv.lock"
       - "pyproject.toml"
       - "config.ini.example"
 jobs:
   lint:
+    name: Lint
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
-      - name: Install Python 3
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.14"
-      - uses: pre-commit/action@v3.0.1
-        env:
-          RUFF_OUTPUT_FORMAT: github
+          activate-environment: true
+      - name: Install dependencies
+        run: uv sync --all-groups
+      - name: Pre-Commit
+        uses: j178/prek-action@v1
+        with:
+          extra-args: "--all-files"
+      - name: Bandit
+        run: uv run bandit -c pyproject.toml -r ./waybar_crypto
   test:
+    name: Tests
     needs: lint
     strategy:
       fail-fast: true
@@ -37,20 +44,15 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
-      - name: Install Python 3
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
-      - name: Install dependencies
-        run: pip install -e .[dev,tests]
+          activate-environment: true
       - name: Run Pytest
         env:
           TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
-        run: pytest -vv --cov=./src --cov-report=xml tests/
+        run: uv run pytest -vv --cov=waybar_crypto --cov-report=xml tests/
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Run Bandit
-        run: bandit -r ./src
