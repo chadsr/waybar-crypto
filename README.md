@@ -97,10 +97,34 @@ An example can be found in [`config.ini.example`](./config.ini.example) with fur
 
 For each cryptocurrency you wish to display, add a section as shown in the [example file](./config.ini.example), where the section name is the **short** cryptocurrency name as found on [CoinMarketCap](https://coinmarketcap.com/).
 
-Valid options:
+**Valid options:**
 
-- **icon:** A character symbol to display next to this cryptocurrency's metrics
-- **in_tooltip:** Whether to display the data in the tooltip instead of the bar (defaults to false)
-- **price_precision** The decimal precision at which to display the price value of the cryptocurrency
-- **change_precision** The decimal precision at which to display the change value(s) of the cryptocurrency
-- **volume_precision** The decimal precision at which to display the volume value of the cryptocurrency
+- **icon**: A character symbol to display next to this cryptocurrency's metrics
+- **in_tooltip**: Whether to display the data in the tooltip instead of the bar (defaults to false)
+- **price_precision**: The decimal precision at which to display the price value of the cryptocurrency
+- **change_precision**: The decimal precision at which to display the change value(s) of the cryptocurrency
+- **volume_precision**: The decimal precision at which to display the volume value of the cryptocurrency
+
+### Custom format strings
+
+You can customize how each displayed metric is rendered using format strings. These can be set globally in the `[general]` section or overridden per-coin in that coin's section. Use the following placeholders:
+
+- **`{val}`**: The numeric value to be displayed
+- **`{dp}`**: The number of decimal places to show (resolved from `price_precision`, `change_precision`, or `volume_precision`, depending on the metric)
+
+All available format keys (they correspond to entries in the `display` list) and their defaults are:
+
+- **format_price**: `{currency_symbol}{val:.{dp}f}`
+- **format_percent_change_1h**: `1h:{val:.{dp}f}%`
+- **format_percent_change_24h**: `24h:{val:.{dp}f}%`
+- **format_percent_change_7d**: `7d:{val:.{dp}f}%`
+- **format_percent_change_30d**: `30d:{val:.{dp}f}%`
+- **format_percent_change_60d**: `60d:{val:.{dp}f}%`
+- **format_percent_change_90d**: `90d:{val:.{dp}f}%`
+- **format_volume_24h**: `24hVol:{val:.{dp}f}`
+- **format_volume_change_24h**: `24hVol:{val:.{dp}f}%`
+
+**Notes/Tips:**
+
+- If you set a global or per-coin `format_price`, include the currency symbol yourself (e.g., `€`); the default behavior prefixes the configured `currency_symbol` automatically, but custom formats are used as-is.
+- For signed changes (e.g. show `+` next to positive values) use the `+` flag in the format, for example: `{val:+.{dp}f}`.
