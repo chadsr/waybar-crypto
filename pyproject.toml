@@ -7,7 +7,7 @@ license = "MIT"
 requires-python = ">=3.11"
 dynamic = ["version"]
 
-dependencies = ["requests"]
+dependencies = ["requests>=2.28.0"]
 
 [dependency-groups]
 dev = [
