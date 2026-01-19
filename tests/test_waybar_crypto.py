@@ -40,6 +40,9 @@ if API_KEY is None:
 TEST_CONFIG_PATH = "./config.ini.example"
 TEST_API_KEY = "test_key"
 
+# Name shown in sys.argv[0] for CLI tests; matches console script in pyproject.toml
+CLI_PROG = "waybar-crypto"
+
 
 # -----------------------------
 # Shared fixtures
@@ -200,7 +203,7 @@ def quotes_latest() -> ResponseQuotesLatest:
 class TestArgParsing:
     @mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: ""})
     def test_parse_args_default_path(self):
-        with mock.patch("sys.argv", ["waybar_crypto.py"]):
+        with mock.patch("sys.argv", [CLI_PROG]):
             args = parse_args()
             assert "config_path" in args
             assert os.path.expanduser(DEFAULT_XDG_CONFIG_HOME_PATH) in os.path.expanduser(
@@ -209,7 +212,7 @@ class TestArgParsing:
 
     @mock.patch.dict(os.environ, {XDG_CONFIG_HOME_ENV: TEST_CONFIG_PATH})
     def test_parse_args_custom_xdg_data_home(self):
-        with mock.patch("sys.argv", ["waybar_crypto.py"]):
+        with mock.patch("sys.argv", [CLI_PROG]):
             args = parse_args()
             assert "config_path" in args
             assert TEST_CONFIG_PATH in args["config_path"]
@@ -672,7 +675,7 @@ class TestMainEntrypoint:
         API_KEY is None, reason=f"test API key not provided in '{TEST_API_KEY_ENV}'"
     )
     @mock.patch.dict(os.environ, {API_KEY_ENV: API_KEY})
-    @mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"])
     def test_main(self, capsys):
         main()
         captured = capsys.readouterr()
@@ -681,13 +684,13 @@ class TestMainEntrypoint:
         assert "tooltip" in waybar_obj
         assert "class" in waybar_obj
 
-    @mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "/invalid/config.ini"])
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "/invalid/config.ini"])
     def test_main_config_path_invalid(self):
         with pytest.raises(WaybarCryptoException):
             main()
 
     @mock.patch("waybar_crypto.waybar_crypto.requests.get")
-    @mock.patch("sys.argv", ["waybar_crypto.py", "--config-path", "./config.ini.example"])
+    @mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"])
     @mock.patch.dict(os.environ, {API_KEY_ENV: "test_api_key"})
     def test_main_success_mocked(self, mock_get, capsys, quotes_latest: ResponseQuotesLatest):
         """Test main() happy path with mocked API response."""
@@ -717,3 +720,25 @@ class TestExceptions:
 
         exc_none = CoinmarketcapApiException("Unknown error", error_code=None)
         assert str(exc_none) == "Unknown error (None)"
+
+    def test_version_fallback_when_pkg_not_installed(self):
+        """Test that a default version is given when no package version is found (PackageNotFoundError)."""
+        import importlib
+        from importlib.metadata import PackageNotFoundError
+
+        # Keep a reference to the loaded package to restore afterwards
+        import waybar_crypto as pkg
+
+        original_version = getattr(pkg, "__version__", None)
+
+        # Force importlib.metadata.version to raise PackageNotFoundError during reload
+        with mock.patch("importlib.metadata.version", side_effect=PackageNotFoundError()):
+            reloaded = importlib.reload(pkg)
+            assert reloaded.__version__ == "0.0.0+unknown"
+
+        # Reload again without patch to restore the original state for subsequent tests
+        reloaded = importlib.reload(pkg)
+        if original_version is not None:
+            assert (
+                reloaded.__version__ == original_version or reloaded.__version__ == "0.0.0+unknown"
+            )
