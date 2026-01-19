@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import runpy
+import sys
 import tempfile
 from unittest import mock
 import pytest
@@ -720,6 +721,9 @@ class TestMainEntrypoint:
         mock_response.status_code = 200
         mock_response.json.return_value = quotes_latest
         mock_get.return_value = mock_response
+
+        # Clear any preloaded module to avoid runpy warning
+        sys.modules.pop("waybar_crypto.__main__", None)
 
         # Provide CLI args so parse_args() succeeds
         with mock.patch("sys.argv", [CLI_PROG, "--config-path", "./config.ini.example"]):
