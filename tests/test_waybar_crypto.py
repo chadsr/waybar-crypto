@@ -38,7 +38,7 @@ from waybar_crypto.models import QuoteData, ResponseQuotesLatest
 LOGGER = logging.getLogger(__name__)
 
 TEST_API_KEY_ENV = "TEST_CMC_API_KEY"
-API_KEY: str | None = os.getenv(TEST_API_KEY_ENV)
+API_KEY: str | None = os.getenv(TEST_API_KEY_ENV) if os.getenv(TEST_API_KEY_ENV) != "" else None
 if API_KEY is None:
     LOGGER.warning("No test API key provided. Skipping API tests")
 
