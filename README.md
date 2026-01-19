@@ -10,7 +10,7 @@ A [Waybar](https://github.com/Alexays/Waybar) module for displaying cryptocurren
 
 ## Requirements
 
-- `python` >=3.10
+- `python` >=3.11
 - `python-requests`
 
 ## Installation
