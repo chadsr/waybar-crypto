@@ -5,11 +5,9 @@ readme = "README.md"
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["requests"]
 dynamic = ["version"]
 
-[project.scripts]
-waybar-crypto = "waybar_crypto.__main__:main"
+dependencies = ["requests"]
 
 [dependency-groups]
 dev = [
@@ -21,14 +19,17 @@ dev = [
     "versioningit>=3.3.0",
 ]
 
+[project.scripts]
+waybar-crypto = "waybar_crypto.__main__:main"
+
 [tool.hatch.version]
 source = "versioningit"
 default-version = "0.0.0+unknown"
 
 [tool.hatch.version.format]
-distance = "{next_version}.dev{distance}+{vcs}{rev}"
+distance = "{version}.dev{distance}+{vcs}{rev}"
 dirty = "{version}+dirty"
-distance-dirty = "{next_version}.dev{distance}+{vcs}{rev}.dirty"
+distance-dirty = "{version}.dev{distance}+{vcs}{rev}.dirty"
 
 [tool.hatch.build.targets.wheel]
 packages = ["waybar_crypto"]
