@@ -5,7 +5,7 @@ readme = "README.md"
 authors = [{ name = "Ross", email = "git@ross.ch" }]
 license = "MIT"
 requires-python = ">=3.11"
-dynamic = ["version"]
+version = "0.6.1"
 
 dependencies = ["requests>=2.28.0"]
 
@@ -16,20 +16,10 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.11",
-    "versioningit>=3.3.0",
 ]
 
 [project.scripts]
 waybar-crypto = "waybar_crypto.__main__:main"
-
-[tool.hatch.version]
-source = "versioningit"
-default-version = "0.0.0+unknown"
-
-[tool.hatch.version.format]
-distance = "{version}.dev{distance}+{vcs}{rev}"
-dirty = "{version}+dirty"
-distance-dirty = "{version}.dev{distance}+{vcs}{rev}.dirty"
 
 [tool.hatch.build.targets.wheel]
 packages = ["waybar_crypto"]
@@ -48,5 +38,5 @@ log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 markers = ["integration: tests that require a real API key and network access"]
 
 [build-system]
-requires = ["hatchling", "versioningit"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
