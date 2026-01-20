@@ -12,7 +12,9 @@ dependencies = ["requests>=2.28.0"]
 [dependency-groups]
 dev = [
     "bandit[toml]>=1.9.2",
+    "basedpyright>=1.37.1",
     "pre-commit>=4.5.1",
+    "prek>=0.2.30",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.11",
@@ -29,6 +31,9 @@ line-length = 100
 
 [tool.bandit]
 exclude = ["test_*.py"]
+
+[tool.pyright]
+exclude = ["tests/"]
 
 [tool.pytest.ini_options]
 log_cli = true

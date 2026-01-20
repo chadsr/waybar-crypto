@@ -11,3 +11,8 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
+
+  - repo: https://github.com/DetachHead/basedpyright-prek-mirror
+    rev: 1.37.1
+    hooks:
+        - id: basedpyright
