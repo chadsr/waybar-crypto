@@ -563,7 +563,7 @@ wheels = [
 
 [[package]]
 name = "waybar-crypto"
-version = "0.6.1"
+version = "1.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },
