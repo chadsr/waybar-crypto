@@ -57,9 +57,9 @@ An example can be found in [`config.ini.example`](./config.ini.example) with fur
     "format": "{}",
     "interval": 600,
     "return-type": "json",
+    "exec-if": "timeout 1 bash -c 'exec 3<>/dev/tcp/pro-api.coinmarketcap.com/443'"
     "exec": "waybar-crypto" // system-wide install (e.g. from AUR)
 //  "exec": "env PYTHONPATH=/path/to/repo python -m waybar_crypto", // manual install
-    "exec-if": "ping pro-api.coinmarketcap.com -c1"
 }
 ```
 
