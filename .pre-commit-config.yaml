@@ -1,23 +1,23 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
+-   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: check-docstring-first
-      - id: check-yaml
-      - id: end-of-file-fixer
+    -   id: check-docstring-first
+    -   id: check-yaml
+    -   id: end-of-file-fixer
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.13
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.14
     hooks:
-      - id: ruff
-      - id: ruff-format
+    -   id: ruff
+    -   id: ruff-format
 
-  - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-    rev: 1.37.1
+-   repo: https://github.com/DetachHead/basedpyright-prek-mirror
+    rev: 1.37.3
     hooks:
-      - id: basedpyright
+    -   id: basedpyright
 
-  - repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+-   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
     rev: v0.9.0
     hooks:
-      - id: pre-commit-update
+    -   id: pre-commit-update
