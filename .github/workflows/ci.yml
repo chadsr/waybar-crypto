@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
       - name: Pre-Commit
-        uses: j178/prek-action@v1
+        uses: j178/prek-action@v2
         with:
           extra-args: "--all-files"
       - name: Bandit
