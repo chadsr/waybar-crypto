@@ -17,7 +17,7 @@ dev = [
     "prek>=0.2.30",
     "pytest>=9.0.3",
     "pytest-cov>=7.0.0",
-    "ruff>=0.14.11",
+    "ruff>=0.15.12",
 ]
 
 [project.scripts]
