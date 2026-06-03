@@ -7,7 +7,7 @@ license = "MIT"
 requires-python = ">=3.11"
 version = "1.6.1"
 
-dependencies = ["requests>=2.28.0"]
+dependencies = ["requests>=2.34.2"]
 
 [dependency-groups]
 dev = [
