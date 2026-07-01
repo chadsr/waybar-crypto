@@ -53,6 +53,6 @@ jobs:
           TEST_CMC_API_KEY: ${{ secrets.TEST_CMC_API_KEY }}
         run: uv run pytest -vv --cov=waybar_crypto --cov-report=xml tests/
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
