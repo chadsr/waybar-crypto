@@ -13,7 +13,7 @@ dependencies = ["requests>=2.34.2"]
 dev = [
     "bandit[toml]>=1.9.4",
     "basedpyright>=1.39.9",
-    "pre-commit>=4.6.0",
+    "pre-commit>=4.6.1",
     "prek>=0.4.11",
     "pytest>=9.1.1",
     "pytest-cov>=7.0.0",
