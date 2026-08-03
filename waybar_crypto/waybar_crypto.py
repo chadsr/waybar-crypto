@@ -154,5 +154,9 @@ class WaybarCrypto(object):
                 if output_obj["text"] != "":
                     output = f"{spacer} {output}"
                 output_obj["text"] += output
+        if outout_obj["text"] == "":
+            for coin_name, coin_config in self.config["coins"].items():
+                output_obj["text"] += coin_config["icon"]
+            
 
         return output_obj
